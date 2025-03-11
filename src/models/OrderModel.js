@@ -21,7 +21,7 @@ const orderSchema = mongoose.Schema({
         addressType : {type : String, enum : ['home' , 'office'],}
     },
     order_status: {
-        placed:{
+        placed:{ 
             status: {type : Boolean, default : true},
             date: { type : Date, immutable: true, default: Date.now }
         },
