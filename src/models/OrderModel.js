@@ -21,47 +21,48 @@ const orderSchema = mongoose.Schema({
         addressType : {type : String, enum : ['home' , 'office'],}
     },
     order_status: {
-        placed:{ 
+        placed:{
             status: {type : Boolean, default : true},
             date: { type : Date, immutable: true, default: Date.now }
         },
         confirmed:{
             status: {type : Boolean, default : false},
-            date: { type : Date, immutable: true},
+            date: { type : Date},
             confirmation_by : { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         out:{
             status: {type : Boolean, default : false},
-            date: { type : Date, immutable: true},
+            date: { type : Date },
             taken_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
             confirmation_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         delivered: {
             status: {type : Boolean, default : false},
-            date: { type : Date, immutable: true},
+            date: { type : Date},
             delivered_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         canceled: {
             status: {type : Boolean, default : false},
-            date: {type : Date, immutable: true},
-            canceled_by: {type: String, enum: ["customer', 'staff"]},
+            date: {type : Date},
+            canceled_by: {type: String, enum: ["customer", "staff"]},
             canceled_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref: 'Staff'},
             reason_for_cancel: {type: String}
         },
         return :{
             status: {type : Boolean, default : false},
-            date: { type: Date, immutable: true},
+            date: { type: Date},
             reason_for_return : {type : String},
-            denied: {type: Boolean, default : false},
+            rejected: {type: Boolean, default : false},
             handled_by: {type: mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         returned :{
             status: {type: Boolean, default : false},
-            date: {type: Date, immutable: true },
+            date: {type: Date },
             pickeup_by: {type: mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
-            denied: {type: Boolean, default: false},
-            denied_by: {type: String, enum:['customer', 'staff']},
-            reason_for_denied: {type: String, default: null}
+            rejected: {type: Boolean, default: false},
+            rejected_by: {type: String, enum:['customer', 'staff']},
+            rejected_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
+            reason_for_rejection: {type: String }
         },
     },
     product_details :[{

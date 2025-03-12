@@ -34,9 +34,9 @@ export const createOrder = async(req , res)=>{
                 if( !prod.hidden && prod.mrp == inpProd.product_mrp && prod.price == inpProd.product_price && prod.batch_no == inpProd.product_batch_no && prod.stock >= inpProd.no_of_product){
                     valid.push(true)
                     val = false
-                    console.log(2,index)
+                    // console.log(2,index)
                 }
-                console.log({index, prod, inpProd})
+                // console.log({index, prod, inpProd})
             })
         });
         console.log({valid})
