@@ -27,19 +27,16 @@ export const createOrder = async(req , res)=>{
             const inpProd = product_details.filter(p => p.product_barcode === product.product_barcode)[0]
             let val = true
             if(product.product_min_order_quantity > inpProd.no_of_product || product.product_max_order_quantity < inpProd.no_of_product){
-                console.log(1, index)
                 return}
             product.product_stock.forEach((prod, index)=>{
                 if(!val){return}
                 if( !prod.hidden && prod.mrp == inpProd.product_mrp && prod.price == inpProd.product_price && prod.batch_no == inpProd.product_batch_no && prod.stock >= inpProd.no_of_product){
                     valid.push(true)
                     val = false
-                    // console.log(2,index)
                 }
                 // console.log({index, prod, inpProd})
             })
         });
-        console.log({valid})
         if(valid.length !== product_b_s.length){return apiErrorResponce(res, "Product May be Out Of Stock")}
 
         const orderData = {

@@ -48,7 +48,7 @@ const orderSchema = mongoose.Schema({
             canceled_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref: 'Staff'},
             reason_for_cancel: {type: String}
         },
-        return :{
+        return_requested :{
             status: {type : Boolean, default : false},
             date: { type: Date},
             reason_for_return : {type : String},
@@ -63,6 +63,12 @@ const orderSchema = mongoose.Schema({
             rejected_by: {type: String, enum:['customer', 'staff']},
             rejected_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
             reason_for_rejection: {type: String }
+        },
+        refund :{
+            status: {type: Boolean, default : false},
+            date: {type: Date },
+            refund_by: {type: mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
+            refund_amount : {type: Number}
         },
     },
     product_details :[{
