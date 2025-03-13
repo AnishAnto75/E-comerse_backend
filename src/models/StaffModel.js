@@ -14,7 +14,7 @@ const staffSchema = mongoose.Schema({
     staff_username: {type: String, required: true},
     staff_email: {type: String, unique: true, required: true},
     staff_password: {type: String, required: true},
-    staff_type: {type: String, enum: [ "staff", "manager", "general_manager", "admin" ], message: '{VALUE} is not supported', required : true},
+    staff_type: {type: String, enum: ["delivery", "staff", "manager", "general_manager", "admin" ], message: '{VALUE} is not supported', required : true},
     staff_photo: {type: String, default:null},
     staff_phone_number: {type: Number, required: true},
     staff_alternate_phone_number: {type: Number, default: null},

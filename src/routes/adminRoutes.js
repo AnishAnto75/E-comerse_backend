@@ -6,7 +6,7 @@ import verifyUser from "../middlewares/verifyUser.js";
 import { CreateProduct, adminFetchAllProduct, adminFetchProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminFetchAllUsers } from "../controllers/adminControllers/adminUserController.js";
-import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, updateOrderStatusToReturned, rejectTheReturnOrder } from "../controllers/adminControllers/adminOrderController.js";
+import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, updateOrderStatusToReturned, rejectTheReturnOrder, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
@@ -58,5 +58,7 @@ router.patch('/order/update/delivered/:id' , verifyUser ,  updateOrderStatusToDe
 router.patch('/order/update/cancel/:id' , verifyUser ,  updateOrderStatusToCanceled )
 router.patch('/order/update/returned/:id' , verifyUser ,  updateOrderStatusToReturned )
 router.patch('/order/update/reject_returned/:id' , verifyUser ,  rejectTheReturnOrder )
+router.get('/order/get_staff/out/:username' , verifyUser ,  adminFetchDeliveryStaffByNameForOrderStatus )
+router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaffByIdForOrderStatus )
 
 export default router

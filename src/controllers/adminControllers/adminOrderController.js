@@ -225,3 +225,26 @@ export const refundOrder = async(req , res)=>{
         return apiErrorResponce(res , "internal server error" , null , 500)
     }
 }
+
+export const adminFetchDeliveryStaffByNameForOrderStatus = async(req, res)=>{
+    try {
+        const { username } = req.params;
+        const deliveryStaffs = await Staff.find({staff_username : {$regex: username, $options: 'i'}, staff_type:"delivery", blocked: false, deleted: false})
+        // .select(['_id', 'product_barcode', 'product_name', 'product_total_stock', 'product_stock', ]).limit(5)
+        return apiSucessResponce(res, "Delivery Staff Found", deliveryStaffs)
+    } catch (error) {
+        console.log("error in adminFetchDeliveryStaffByNameForOrderStatus controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}
+
+export const adminFetchDeliveryStaffByIdForOrderStatus = async(req, res)=>{
+    try {
+        const { id } = req.params;
+        const deliveryStaffs = await Staff.findOne({staff_id : id , staff_type:"delivery", blocked: false, deleted: false})
+        return apiSucessResponce(res, "Delivery Staff Found", deliveryStaffs)
+    } catch (error) {
+        console.log("error in adminFetchDeliveryStaffByIdForOrderStatus controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}
