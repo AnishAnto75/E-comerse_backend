@@ -113,37 +113,56 @@ export const getAllOrder = async(req , res)=>{
 }
 
 export const cancelOrder = async(req , res)=>{
-    const {id} = req.params
     try {
-        const user = req.body.user
-        const _id = req.body.user._id
+        const {id} = req.params
+        
+        const reason_for_cancel = req.body.data?.reason_for_cancel
+        if(!reason_for_cancel){return apiErrorResponce(res, "Invalid Credentials")}
+        
+        const order = await Order.findOne({order_id : id})
+        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
+        
+        if(order.order_status.delivered.status){return apiErrorResponce(res, "Can't cancel the because the order is already delivered")}
+        if(order.order_status.canceled.status){return apiErrorResponce(res, "Order Is Already Canceled")}
 
-        // validating user author
-        let valid = false
-        user.order_id.map((order)=>{ if(order._id.toString() == id){ return valid = true } })
-        if(!valid){ return apiErrorResponce(res , "unauthorised user") }        
-
-        const order = await Order.findOne({_id : id})
-        if(!order){ return apiErrorResponce(res, "Order Not Found") }
-
-        const preStatus = order.order_status[order.order_status.length-1].status
-
-        const validStatus = preStatus == "delivered" ? false : preStatus == "canceled" ? false : preStatus == "return" ? false : preStatus == "returned" ? false : true
-        if(!validStatus){return apiErrorResponce(res, "Cannot Cancel the Order ")}
-
-        const order_status = {
-            status : 'canceled',
-            date : new Date(),
-            updated_staff_id : _id
-        }
-
-        order.order_status.push(order_status)
+        order.order_status.canceled.status = true
+        order.order_status.canceled.date = new Date()
+        order.order_status.canceled.canceled_by = 'customer'
+        order.order_status.canceled.reason_for_cancel = reason_for_cancel
         await order.save()
 
-        return apiSucessResponce(res , "Order Canceled Sucessfully", order )
+        return apiSucessResponce(res , "Order Canceled", order.order_status )
 
     } catch (error) {
         console.log("error in cancelOrder controller : " ,error)
+        return apiErrorResponce(res , "internal server error" , null , 500)
+    }
+}
+
+export const returnOrder = async(req , res)=>{
+    try {
+        const {id} = req.params
+
+        const reason_for_return = req.body.data?.reason_for_return
+        if(!reason_for_return){return apiErrorResponce(res, "Invalid Credentials")}
+
+        const order = await Order.findOne({order_id : id})
+        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
+
+        if(order.order_status.canceled.status){return apiErrorResponce(res, "The order is already canceled")}
+        if(!order.order_status.delivered.status){return apiErrorResponce(res, "Can't return because the order is not yet to be delivered")}
+        if(order.order_status.returned.status){return apiErrorResponce(res, "Order Is Already Returned")}
+        if(order.order_status.return_requested.status){return apiErrorResponce(res, "Order already requested for return")}
+
+        order.order_status.return_requested.status = true
+        order.order_status.return_requested.date = new Date()
+        order.order_status.return_requested.reason_for_return = reason_for_return
+        await order.save()
+
+        return apiSucessResponce(res , "Order requested for return", order.order_status )
+
+    } catch (error) {
+        console.log("error in updateOrderStatusToReturned controller : " ,error)
         return apiErrorResponce(res , "internal server error" , null , 500)
     }
 }

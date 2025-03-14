@@ -137,6 +137,36 @@ export const updateOrderStatusToCanceled = async(req , res)=>{
     }
 }
 
+export const adminRejectReturnRequest = async(req , res)=>{
+    try {
+        const {id} = req.params
+        const staff_id = req.body.user._id
+        const reason_for_rejection = req.body.data?.reason_for_rejection
+
+        if(!reason_for_rejection){return apiErrorResponce(res, "Invalid Credentials", null, 404)}
+
+        const order = await Order.findOne({order_id : id})
+        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
+
+        if(!order.order_status.return_requested.status){return apiErrorResponce(res, "Customer not requested for return")}
+        if(order.order_status.returned.status){return apiErrorResponce(res, "Order Already returned")}
+        if(order.order_status.returned.rejected){return apiErrorResponce(res, "You are not eligible to return the order")}
+        if(order.order_status.return_requested.rejected){return apiErrorResponce(res, "You are not eligible to return the order")}
+
+        order.order_status.return_requested.rejected = true
+        order.order_status.return_requested.rejected_date = new Date()
+        order.order_status.return_requested.reason_for_rejection = reason_for_rejection
+        order.order_status.return_requested.handled_by = staff_id
+        await order.save()
+
+        return apiSucessResponce(res , "Order returned", order.order_status )
+
+    } catch (error) {
+        console.log("error in updateOrderStatusToReturned controller : " ,error)
+        return apiErrorResponce(res , "internal server error" , null , 500)
+    }
+}
+
 export const updateOrderStatusToReturned = async(req , res)=>{
     try {
         const {id} = req.params
@@ -148,6 +178,7 @@ export const updateOrderStatusToReturned = async(req , res)=>{
         if(order.order_status.canceled.status){return apiErrorResponce(res, "The order is already canceled")}
         if(!order.order_status.delivered.status){return apiErrorResponce(res, "Can't return because the order is not yet to be delivered")}
         if(!order.order_status.return_requested.status){return apiErrorResponce(res, "Customer not requested to return")}
+        if(order.order_status.return_requested.rejected){return apiErrorResponce(res, "Returning the order is rejected")}
         if(order.order_status.returned.status){return apiErrorResponce(res, "Order Is Already Returned")}
 
         order.order_status.returned.status = true
@@ -155,7 +186,7 @@ export const updateOrderStatusToReturned = async(req , res)=>{
         order.order_status.returned.pickeup_by = staff_id
         await order.save()
 
-        return apiSucessResponce(res , "Order returned", order )
+        return apiSucessResponce(res , "Order returned", order.order_status )
 
     } catch (error) {
         console.log("error in updateOrderStatusToReturned controller : " ,error)
@@ -187,7 +218,7 @@ export const rejectTheReturnOrder = async(req , res)=>{
         order.order_status.returned.reason_for_rejection = reason_for_rejection
         await order.save()
 
-        return apiSucessResponce(res , "Staff Rejected to return the order", order )
+        return apiSucessResponce(res , "Staff Rejected to return the order", order.order_status )
 
     } catch (error) {
         console.log("error in rejectTheReturnOrder controller : " ,error)
@@ -218,7 +249,7 @@ export const refundOrder = async(req , res)=>{
         order.order_status.refund.refund_amount = refund_amount
         await order.save()
 
-        return apiSucessResponce(res , "Money refunded", order )
+        return apiSucessResponce(res , "Money refunded", order.order_status )
 
     } catch (error) {
         console.log("error in refundOrder controller : " ,error)

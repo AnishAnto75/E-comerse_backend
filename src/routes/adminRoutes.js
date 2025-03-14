@@ -6,7 +6,7 @@ import verifyUser from "../middlewares/verifyUser.js";
 import { CreateProduct, adminFetchAllProduct, adminFetchProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminFetchAllUsers } from "../controllers/adminControllers/adminUserController.js";
-import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, updateOrderStatusToReturned, rejectTheReturnOrder, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus } from "../controllers/adminControllers/adminOrderController.js";
+import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, updateOrderStatusToReturned, rejectTheReturnOrder, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus, refundOrder, adminRejectReturnRequest } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
@@ -56,8 +56,10 @@ router.patch('/order/update/confirmed/:id' , verifyUser ,  updateOrderStatusToCo
 router.patch('/order/update/out/:id' , verifyUser ,  updateOrderStatusToOut )
 router.patch('/order/update/delivered/:id' , verifyUser ,  updateOrderStatusToDelivered )
 router.patch('/order/update/cancel/:id' , verifyUser ,  updateOrderStatusToCanceled )
+router.patch('/order/update/reject_return_request/:id' , verifyUser , adminRejectReturnRequest )
 router.patch('/order/update/returned/:id' , verifyUser ,  updateOrderStatusToReturned )
 router.patch('/order/update/reject_returned/:id' , verifyUser ,  rejectTheReturnOrder )
+router.patch('/order/update/refund/:id' , verifyUser , refundOrder )
 router.get('/order/get_staff/out/:username' , verifyUser ,  adminFetchDeliveryStaffByNameForOrderStatus )
 router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaffByIdForOrderStatus )
 
