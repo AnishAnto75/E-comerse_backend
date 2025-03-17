@@ -10,7 +10,6 @@ export const adminCreatePurchase = async(req, res)=>{
         const {data} = req.body
         if(!data){return apiErrorResponce(res, "Invalid Credentials")}
 
-        console.log({data})
         if(!data.supplier_id || !data.invoice_no || !data.products || !data.total_purchase_amount || !data.payment_done){return apiErrorResponce(res, "Invalid Credentials")}
         data['added_by'] = user._id
 

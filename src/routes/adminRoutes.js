@@ -6,12 +6,13 @@ import verifyUser from "../middlewares/verifyUser.js";
 import { CreateProduct, adminFetchAllProduct, adminFetchProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminFetchAllUsers } from "../controllers/adminControllers/adminUserController.js";
-import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, updateOrderStatusToReturned, rejectTheReturnOrder, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus, refundOrder, adminRejectReturnRequest } from "../controllers/adminControllers/adminOrderController.js";
+import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminCreateSupplier, adminFetchAllSuppliers, adminFetchSupplier } from "../controllers/adminControllers/adminSupplierController.js";
-import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/AdminPurchaseController.js";
+import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/adminPurchaseController.js";
+import { createBanner, fetchAllBanners } from "../controllers/adminControllers/adminBannerController.js";
 
 const router = express.Router()
 
@@ -50,17 +51,19 @@ router.get('/staff/all-staff' , verifyUser ,  adminFetchAllStaffs )
 router.get('/staff/:id' , verifyUser ,  adminFetchStaff )
 
 //Orders
-router.get('/all-order' , verifyUser ,  fetchAllOrders )
+router.get('/order/all-order' , verifyUser ,  fetchAllOrders )
 router.get('/order/:id' , verifyUser ,  fetchAdminOrder )
 router.patch('/order/update/confirmed/:id' , verifyUser ,  updateOrderStatusToConfirmed )
 router.patch('/order/update/out/:id' , verifyUser ,  updateOrderStatusToOut )
 router.patch('/order/update/delivered/:id' , verifyUser ,  updateOrderStatusToDelivered )
 router.patch('/order/update/cancel/:id' , verifyUser ,  updateOrderStatusToCanceled )
-router.patch('/order/update/reject_return_request/:id' , verifyUser , adminRejectReturnRequest )
-router.patch('/order/update/returned/:id' , verifyUser ,  updateOrderStatusToReturned )
-router.patch('/order/update/reject_returned/:id' , verifyUser ,  rejectTheReturnOrder )
-router.patch('/order/update/refund/:id' , verifyUser , refundOrder )
 router.get('/order/get_staff/out/:username' , verifyUser ,  adminFetchDeliveryStaffByNameForOrderStatus )
 router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaffByIdForOrderStatus )
+
+// Banner
+
+router.post('/banner/create-banner', verifyUser, createBanner)
+router.get('/banner/all-banners', verifyUser, fetchAllBanners)
+
 
 export default router
