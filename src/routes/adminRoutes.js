@@ -12,7 +12,7 @@ import {createProductGroup, fetchAllProductGroup} from '../controllers/adminCont
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminCreateSupplier, adminFetchAllSuppliers, adminFetchSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/adminPurchaseController.js";
-import { createBanner, fetchAllBanners } from "../controllers/adminControllers/adminBannerController.js";
+import { createBanner, deleteBanner, fetchAllBanners } from "../controllers/adminControllers/adminBannerController.js";
 
 const router = express.Router()
 
@@ -64,6 +64,7 @@ router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaff
 
 router.post('/banner/create-banner', verifyUser, createBanner)
 router.get('/banner/all-banners', verifyUser, fetchAllBanners)
+router.patch('/banner/delete-banner/:id', verifyUser, deleteBanner)
 
 
 export default router

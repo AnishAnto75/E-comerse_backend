@@ -16,7 +16,7 @@ const categorySchema = mongoose.Schema({
     heading: {type: String, required: true}
 })
 const groupSchema = mongoose.Schema({
-    group_id :[{type: mongoose.SchemaTypes.ObjectId, ref: 'ProductGroup', required: true}],
+    group_id :{type: mongoose.SchemaTypes.ObjectId, ref: 'ProductGroup', required: true},
     heading: {type: String, required: true}
 })
 
