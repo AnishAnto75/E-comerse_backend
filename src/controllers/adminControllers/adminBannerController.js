@@ -1,4 +1,5 @@
 import Banner from '../../models/BannerModel.js'
+import Product from '../../models/ProductModel.js'
 import {apiErrorResponce, apiSucessResponce} from '../../utils/apiResponce.js'
 import {validateMongooseId} from '../../utils/validateTypes.js'
 
@@ -51,7 +52,7 @@ export const createBanner = async(req, res)=>{
             banner.status = true
             await banner.save()
 
-            return apiSucessResponce(res, "Banner placed Successfully", banner)
+            return apiSucessResponce(res, "Banner placed Successfully")
         }
 
         // Group
@@ -136,3 +137,24 @@ export const deleteBanner = async(req, res)=>{
     }
 }
 
+export const adminFetchProductsByNameForCreateBanner = async(req, res)=>{
+    try {
+        const { name } = req.params;
+        const products = await Product.find({product_name : {$regex: name, $options: 'i'} , deleted: false}).select(['_id', 'product_name', "product_barcode", 'product_photos']).limit(5)
+        return apiSucessResponce(res, "Products found Successfully", products)
+    } catch (error) {
+        console.log("error in adminFetchProductsByNameForCreateBanner controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}
+
+export const adminFetchProductsByBarcodeForCreateBanner = async(req, res)=>{
+    try {
+        const {barcode} = req.params
+        const products = await Product.findOne({product_barcode : barcode, deleted: false}).select(['_id', 'product_name', "product_barcode", 'product_photos'])
+        return apiSucessResponce(res, "Products found Successfully", products)
+    } catch (error) {
+        console.log("error in adminFetchProductsByBarcodeForCreateBanner controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}

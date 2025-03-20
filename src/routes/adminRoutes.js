@@ -12,7 +12,7 @@ import {createProductGroup, fetchAllProductGroup} from '../controllers/adminCont
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminCreateSupplier, adminFetchAllSuppliers, adminFetchSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/adminPurchaseController.js";
-import { createBanner, deleteBanner, fetchAllBanners } from "../controllers/adminControllers/adminBannerController.js";
+import { adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners } from "../controllers/adminControllers/adminBannerController.js";
 
 const router = express.Router()
 
@@ -41,9 +41,9 @@ router.get('/supplier/:id' , verifyUser ,  adminFetchSupplier)
 router.post('/purchase/create-purchase' , verifyUser , adminCreatePurchase)
 router.get('/purchase/all-purchases' , verifyUser ,  adminFetchAllPurchases)
 router.get('/purchase/all-suppliers' , verifyUser ,  adminFetchAllSuppliersForPurchaseBook)
+router.get('/purchase/:id' , verifyUser ,  adminFetchPurchaseBook)
 router.get('/purchase/product/barcode/:barcode' , verifyUser ,  adminFetchProductsByBarcodeForPurchaseEntry)
 router.get('/purchase/product/name/:name' , verifyUser , adminFetchProductsByNameForPurchaseEntry)
-router.get('/purchase/:id' , verifyUser ,  adminFetchPurchaseBook)
 
 // Staff
 router.post('/staff/add-staff' , verifyUser ,  adminAddNewStaff )
@@ -61,8 +61,9 @@ router.get('/order/get_staff/out/:username' , verifyUser ,  adminFetchDeliverySt
 router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaffByIdForOrderStatus )
 
 // Banner
-
 router.post('/banner/create-banner', verifyUser, createBanner)
+router.get('/banner/create/product-name/:name', verifyUser, adminFetchProductsByNameForCreateBanner)
+router.get('/banner/create/product-barcode/:barcode', verifyUser, adminFetchProductsByBarcodeForCreateBanner)
 router.get('/banner/all-banners', verifyUser, fetchAllBanners)
 router.patch('/banner/delete-banner/:id', verifyUser, deleteBanner)
 
