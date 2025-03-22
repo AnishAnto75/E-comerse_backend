@@ -10,14 +10,14 @@ export const createBanner = async(req, res)=>{
         const {banner_id, banner_type, card, carousel, group, category } = data
 
         if(!["carousel", "card", "group", "category"].includes(banner_type)){return apiErrorResponce(res, "Invalid Credentials")}
-        
+
         const banner = await Banner.findOne({banner_id})
         if(!banner || banner.status){ return apiErrorResponce(res, "Invalid Credentials")}
 
         // Carousel
         if(banner_type == "carousel"){
             if(!carousel || !carousel.products || typeof(carousel.products) !== 'object' || !carousel.heading){return apiErrorResponce(res, "Invalid Credentials")}
-            let valid = carousel.products.map((product) => {
+            let valid = carousel.products?.map((product) => {
                 if(product.product_id && product.image && validateMongooseId(product.product_id)){return true}
                 else{return false}
             });
@@ -31,7 +31,10 @@ export const createBanner = async(req, res)=>{
             banner.status = true
             await banner.save()
 
-            return apiSucessResponce(res, "Banner placed Successfully", banner)
+            const selectedCarouselValues = ["product_barcode", "product_name"]
+            const newBanner = await Banner.findOne({banner_id: banner.banner_id}).populate([{ path: ["carousel.products.product_id"], select:selectedCarouselValues, strictPopulate: false }])
+
+            return apiSucessResponce(res, "Banner placed Successfully", newBanner)
         }
 
         // Card
@@ -52,14 +55,15 @@ export const createBanner = async(req, res)=>{
             banner.status = true
             await banner.save()
 
-            return apiSucessResponce(res, "Banner placed Successfully")
+            const selectedCardValues = ["product_brand", "product_barcode", "product_name", "product_photos"]
+            const newBanner = await Banner.findOne({banner_id: banner.banner_id}).populate([{ path: ["card.product_id"], select:selectedCardValues, strictPopulate: false }])
+
+            return apiSucessResponce(res, "Banner created Successfully", newBanner)
         }
 
         // Group
         if(banner_type == "group"){
-            if(!group || !group.group_id || typeof(group.group_id) !== 'string' || !group.heading){return apiErrorResponce(res, "Invalid Credentials")}
-
-            if(!validateMongooseId(group.group_id)){return apiErrorResponce(res, "Invalid Credefntials")}
+            if(!group || !group.group_id || !validateMongooseId(group.group_id) || !group.heading){return apiErrorResponce(res, "Invalid Credentials")}
 
             banner.banner_type = 'group'
             banner.group = {
@@ -69,7 +73,9 @@ export const createBanner = async(req, res)=>{
             banner.status = true
             await banner.save()
 
-            return apiSucessResponce(res, "Banner placed Successfully", banner)
+            const newBanner = await Banner.findOne({banner_id: banner.banner_id}).populate({path: 'group.group_id', populate: {path: 'category_id',model: 'ProductCategory', select:['category_name', "category_image", "deleted" ], strictPopulate: false}, strictPopulate: false})
+
+            return apiSucessResponce(res, "Banner placed Successfully", newBanner)
         }
 
         // Category
@@ -95,22 +101,22 @@ export const createBanner = async(req, res)=>{
 
         return apiErrorResponce(res, "Invalid Credentials")
     } catch (error) {
-        console.log("Error in modifyBanner Controller: ", error)
+        console.log("Error in createBanner Controller: ", error)
         return apiErrorResponce(res, "Internal Server Error")
     }
 }
 
 export const fetchAllBanners = async(req, res)=>{
     try {
-        const selectedCardValues = ["product_brand", "product_barcode", "product_name", "product_photos"]
         const banner = await Banner.find()
-            .populate([{ path: ["card.product_id"], select:selectedCardValues, strictPopulate: false }, "card.product_id.product_brand"],)
-            .populate([{ path: ["group.group_id"], strictPopulate: false }])
+            .populate({ path: ["carousel.products.product_id"], select:["product_barcode", "product_name"], strictPopulate: false })
+            .populate({ path: ["card.product_id"], select:["product_brand", "product_barcode", "product_name", "product_photos"], strictPopulate: false })
+            .populate({path: 'group.group_id', populate: {path: 'category_id',model: 'ProductCategory', select:['category_name', "category_image", "deleted" ], strictPopulate: false}, strictPopulate: false})
 
         if(!banner.length){return apiErrorResponce(res, "Internal Server Error")}
         return apiSucessResponce(res, "All banners fetched successfully", banner)
     } catch (error) {
-        console.log("Error in modifyBanner Controller: ", error)
+        console.log("Error in fetchAllBanners Controller: ", error)
         return apiErrorResponce(res, "Internal Server Error")
     }
 }
@@ -132,7 +138,7 @@ export const deleteBanner = async(req, res)=>{
 
         return apiSucessResponce(res, "Banner Deleted Sucessfully", banner)
     } catch (error) {
-        console.log("Error in modifyBanner Controller: ", error)
+        console.log("Error in deleteBanner Controller: ", error)
         return apiErrorResponce(res, "Internal Server Error")
     }
 }

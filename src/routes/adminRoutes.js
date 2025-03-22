@@ -67,5 +67,4 @@ router.get('/banner/create/product-barcode/:barcode', verifyUser, adminFetchProd
 router.get('/banner/all-banners', verifyUser, fetchAllBanners)
 router.patch('/banner/delete-banner/:id', verifyUser, deleteBanner)
 
-
 export default router
