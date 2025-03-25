@@ -12,7 +12,7 @@ import {createProductGroup, fetchAllProductGroup} from '../controllers/adminCont
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminCreateSupplier, adminFetchAllSuppliers, adminFetchSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/adminPurchaseController.js";
-import { adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners } from "../controllers/adminControllers/adminBannerController.js";
+import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGroupsByNameForCreateBanner, adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners, fetchBanner, hideBanner } from "../controllers/adminControllers/adminBannerController.js";
 
 const router = express.Router()
 
@@ -64,7 +64,12 @@ router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaff
 router.post('/banner/create-banner', verifyUser, createBanner)
 router.get('/banner/create/product-name/:name', verifyUser, adminFetchProductsByNameForCreateBanner)
 router.get('/banner/create/product-barcode/:barcode', verifyUser, adminFetchProductsByBarcodeForCreateBanner)
+router.get('/banner/create/group-name/:name', verifyUser, adminFetchGroupsByNameForCreateBanner)
+router.get('/banner/create/category-name/:name', verifyUser, adminFetchCategoryByNameForCreateBanner)
+router.patch('/banner/edit-banner', verifyUser, adminEditBanner)
 router.get('/banner/all-banners', verifyUser, fetchAllBanners)
+router.get('/banner/:banner_id', verifyUser, fetchBanner)
 router.patch('/banner/delete-banner/:id', verifyUser, deleteBanner)
+router.patch('/banner/hide-banner/:id', verifyUser, hideBanner)
 
 export default router
