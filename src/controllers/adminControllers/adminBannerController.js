@@ -140,7 +140,7 @@ export const adminEditBanner = async(req, res)=>{
             banner.group = null
             banner.card = null
             banner.category = null
-            // await banner.save()
+            await banner.save()
 
             const newBanner = await Banner.findOne({banner_id: banner.banner_id}).populate([{ path: ["carousel.products.product_id"], select:["product_barcode", "product_name"], strictPopulate: false }])
 
@@ -187,7 +187,7 @@ export const adminEditBanner = async(req, res)=>{
             banner.card = null
             banner.carousel = null
             banner.category = null
-            // await banner.save()
+            await banner.save()
 
             const newBanner = await Banner.findOne({banner_id: banner.banner_id}).populate({path: 'group.group_id', populate: {path: 'category_id',model: 'ProductCategory', select:['category_name', "category_image", "deleted" ], strictPopulate: false}, strictPopulate: false})
 
