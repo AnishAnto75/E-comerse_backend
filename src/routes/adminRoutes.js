@@ -3,7 +3,7 @@ import express from "express";
 import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
-import { CreateProduct, adminFetchAllProduct, adminFetchProduct } from "../controllers/adminControllers/adminProductControllers.js";
+import { CreateProduct, adminFetchAllProduct, adminFetchHighSellingProduct, adminFetchProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminFetchAllUsers } from "../controllers/adminControllers/adminUserController.js";
 import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus } from "../controllers/adminControllers/adminOrderController.js";
@@ -30,6 +30,7 @@ router.get('/product-category/all-categories' , verifyUser , verifingAdmin, fetc
 // Products
 router.post('/product/add-product' , verifyUser ,  CreateProduct)
 router.get('/product/all-product' , verifyUser , adminFetchAllProduct)
+router.get('/product/high-selling-products' , verifyUser , adminFetchHighSellingProduct)
 router.get('/product/:id' , verifyUser ,  adminFetchProduct)
 
 //Supplier

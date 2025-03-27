@@ -53,10 +53,24 @@ export const CreateProduct = async(req , res)=>{
 
 export const adminFetchAllProduct = async(req,res)=>{
     try {
-        // const selectingList = ['product_group', "product_category", "product_brand", "product_barcode", "product_name", "product_unit", "product_stock", "product_out_of_stock", "product_photos", "product_mrp", "product_price", "hidden", "deleted"   ]
+        const selectingList = ["product_brand", "product_barcode", "product_name", "product_unit", "product_total_stock", "product_photos", "product_mrp", "product_price", "hidden", "deleted"   ]
         const products = await Product.find({deleted : false})
-        // .select(selectingList)
+        .select(selectingList)
         return apiSucessResponce(res, "All Products Fetched SucessFully", products)
+    } catch (error) {
+        console.log("error in fetchAllProduct controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}
+
+export const adminFetchHighSellingProduct = async(req,res)=>{
+    try {
+        const products = await Product.find({deleted : false}).sort({ product_total_unit_sold: -1 }).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_total_unit_sold", "product_photos", "hidden" ])
+        const data = {
+            total_no_of_products : products.length,
+            products: products.slice(0, 15)
+        }
+        return apiSucessResponce(res, "All Products Fetched SucessFully", data)
     } catch (error) {
         console.log("error in fetchAllProduct controller" , error)
         return apiErrorResponce(res , "internal Server Error")
