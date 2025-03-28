@@ -63,12 +63,17 @@ export const adminFetchAllProduct = async(req,res)=>{
     }
 }
 
-export const adminFetchHighSellingProduct = async(req,res)=>{
+export const adminFetchForProductPage = async(req,res)=>{
     try {
-        const products = await Product.find({deleted : false}).sort({ product_total_unit_sold: -1 }).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_total_unit_sold", "product_photos", "hidden" ])
+        const products = await Product.find({deleted : false}).sort({ product_total_unit_sold: -1 }).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_low_in_stock", "product_total_unit_sold", "product_photos", "hidden" ])
+        const low_in_stock_products = products.filter((product)=> product.product_total_stock < product.product_low_in_stock)
+        let total_stock = 0
+        products?.forEach(product => total_stock += product.product_total_stock);
         const data = {
-            total_no_of_products : products.length,
-            products: products.slice(0, 15)
+            total_products : products.length,
+            products: products.slice(0, 15),
+            low_in_stock : low_in_stock_products.length,
+            total_stock
         }
         return apiSucessResponce(res, "All Products Fetched SucessFully", data)
     } catch (error) {
