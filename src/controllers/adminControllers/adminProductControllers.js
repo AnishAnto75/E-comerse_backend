@@ -53,9 +53,9 @@ export const CreateProduct = async(req , res)=>{
 
 export const adminFetchAllProduct = async(req,res)=>{
     try {
-        const selectingList = ["product_brand", "product_barcode", "product_name", "product_unit", "product_total_stock", "product_photos", "product_mrp", "product_price", "hidden", "deleted"   ]
-        const products = await Product.find({deleted : false})
-        .select(selectingList)
+        const selectingList = ["product_brand", "product_barcode", "product_name", "product_total_stock", "product_photos", "product_total_unit_sold", "product_low_in_stock", "hidden" ]
+        const products = await Product.find({deleted : false}).select(selectingList)
+
         return apiSucessResponce(res, "All Products Fetched SucessFully", products)
     } catch (error) {
         console.log("error in fetchAllProduct controller" , error)
@@ -63,17 +63,21 @@ export const adminFetchAllProduct = async(req,res)=>{
     }
 }
 
-export const adminFetchForProductPage = async(req,res)=>{
+export const adminFetchForProductPage = async(req, res)=>{
     try {
         const products = await Product.find({deleted : false}).sort({ product_total_unit_sold: -1 }).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_low_in_stock", "product_total_unit_sold", "product_photos", "hidden" ])
+
+        const prdts = products.slice(0, 15)
+        const total_products = products.length
         const low_in_stock_products = products.filter((product)=> product.product_total_stock < product.product_low_in_stock)
         let total_stock = 0
-        products?.forEach(product => total_stock += product.product_total_stock);
+        products?.forEach(product => total_stock += product.product_total_stock)
+
         const data = {
-            total_products : products.length,
-            products: products.slice(0, 15),
+            products : prdts,
+            total_products,
             low_in_stock : low_in_stock_products.length,
-            total_stock
+            total_stock,
         }
         return apiSucessResponce(res, "All Products Fetched SucessFully", data)
     } catch (error) {
@@ -90,5 +94,23 @@ export const adminFetchProduct = async(req,res)=>{
     } catch (error) {
         console.log("error in adminFetchProduct controller" , error)
         return apiErrorResponce(res , "internal Server Error")
+    }
+}
+
+export const adminSearchProducts = async(req,res)=>{
+    try {
+        
+        const { name } = req.query;
+        if(!name){
+            return apiErrorResponce(res, "Internal Server Error")
+        }
+
+        const products = await Product.find({product_name : {$regex: name, $options: 'i'}, deleted: false}).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_total_unit_sold", "product_photos", "hidden" ]).limit(15)
+
+        return apiSucessResponce(res, "All Products Fetched SucessFully", products)
+        
+    } catch (error) {
+        console.log("error in adminFetchProduct controller" , error)
+        return apiErrorResponce(res , "Internal Server Error")
     }
 }
