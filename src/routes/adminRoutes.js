@@ -6,7 +6,7 @@ import verifyUser from "../middlewares/verifyUser.js";
 import { CreateProduct, adminFetchAllProduct, adminFetchForProductPage, adminFetchProduct, adminSearchProducts } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminFetchAllUsers } from "../controllers/adminControllers/adminUserController.js";
-import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus } from "../controllers/adminControllers/adminOrderController.js";
+import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus, adminFetchForOrderPage, fetchAdminOrderByIdForOrderPage } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
@@ -31,8 +31,8 @@ router.get('/product-category/all-categories' , verifyUser , verifingAdmin, fetc
 router.post('/product/add-product' , verifyUser ,  CreateProduct)
 router.get('/product/search' , verifyUser , adminSearchProducts)
 router.get('/product/all-product' , verifyUser , adminFetchAllProduct)
-router.get('/product/high-selling-products' , verifyUser , adminFetchForProductPage)
-router.get('/product/:id' , verifyUser ,  adminFetchProduct)
+router.get('/product/product-page' , verifyUser , adminFetchForProductPage)
+router.get('/product/product_id/:id' , verifyUser ,  adminFetchProduct)
 
 //Supplier
 router.post('/supplier/create-supplier' , verifyUser , adminCreateSupplier)
@@ -54,13 +54,15 @@ router.get('/staff/:id' , verifyUser ,  adminFetchStaff )
 
 //Orders
 router.get('/order/all-order' , verifyUser ,  fetchAllOrders )
-router.get('/order/:id' , verifyUser ,  fetchAdminOrder )
+router.get('/order/order_id/:order_id' , verifyUser ,  fetchAdminOrder )
 router.patch('/order/update/confirmed/:id' , verifyUser ,  updateOrderStatusToConfirmed )
 router.patch('/order/update/out/:id' , verifyUser ,  updateOrderStatusToOut )
 router.patch('/order/update/delivered/:id' , verifyUser ,  updateOrderStatusToDelivered )
 router.patch('/order/update/cancel/:id' , verifyUser ,  updateOrderStatusToCanceled )
 router.get('/order/get_staff/out/:username' , verifyUser ,  adminFetchDeliveryStaffByNameForOrderStatus )
 router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaffByIdForOrderStatus )
+router.get('/order/order-page' , verifyUser ,  adminFetchForOrderPage )
+router.get('/order/order-page/search/:order_id' , verifyUser , fetchAdminOrderByIdForOrderPage )
 
 // Banner
 router.post('/banner/create-banner', verifyUser, createBanner)
@@ -70,7 +72,7 @@ router.get('/banner/create/group-name/:name', verifyUser, adminFetchGroupsByName
 router.get('/banner/create/category-name/:name', verifyUser, adminFetchCategoryByNameForCreateBanner)
 router.patch('/banner/edit-banner', verifyUser, adminEditBanner)
 router.get('/banner/all-banners', verifyUser, fetchAllBanners)
-router.get('/banner/:banner_id', verifyUser, fetchBanner)
+router.get('/banner/banner_id/:banner_id', verifyUser, fetchBanner)
 router.patch('/banner/delete-banner/:id', verifyUser, deleteBanner)
 router.patch('/banner/hide-banner/:id', verifyUser, hideBanner)
 

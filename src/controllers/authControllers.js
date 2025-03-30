@@ -23,7 +23,9 @@ export const signUp = async(req , res) =>{
 
         const hashedPassword = await bcrypt.hash(password , 10)
 
-        const newUser = new User({email , password : hashedPassword , name, gender})
+        const user_id = `USR${generateRandom12DigitNumber()}`
+
+        const newUser = new User({ user_id, email , password : hashedPassword , name, gender})
         await newUser.save()
 
         return apiSucessResponce(res , "Signed Up Successfully", newUser, 201)

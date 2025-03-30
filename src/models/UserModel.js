@@ -19,6 +19,7 @@ const cartSchema = mongoose.Schema({
 })
 
 const userSchema = mongoose.Schema({
+    user_id :{ type: String, unique: true, required: true},
     user_type :{ type: String, enum: ['user'], default: 'user'},
     email : { type: String, immutable: true, unique: true, required: true },
     password : {type: String, required: true},

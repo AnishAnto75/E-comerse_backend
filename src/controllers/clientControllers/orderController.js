@@ -57,6 +57,7 @@ export const createOrder = async(req , res)=>{
 
         const newOrder = new Order(orderData)
         await newOrder.save()
+        console.log(newOrder)
 
         const user = await User.findOne({_id : user_id})
         user.order_id.push(newOrder._id) 
