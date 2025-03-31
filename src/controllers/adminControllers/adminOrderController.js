@@ -8,22 +8,21 @@ export const fetchAllOrders = async(req , res)=>{
         apiSucessResponce(res , "All Orders Fetched" , orders)
     } catch (error) {
         console.log("error in fetchAllOrders controller : " ,error)
-        apiErrorResponce(res , "internal server error" , null , 500)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
     }
 }
 
 export const fetchAdminOrder = async(req , res)=>{
     try {
         const {order_id} = req.params
-        const order = await Order.findOne({order_id}).populate([{ path: ["user_id"], select:["email", "name", "user_id", "phoneNumber"], strictPopulate: false }])
+        const order = await Order.findOne({order_id})
+        .populate({ path: ["user_id"], select:["email", "name", "user_id", "phoneNumber"], strictPopulate: false })
+        .populate({ path: ["product_details.product_id"], model: "Product", select:['product_photos', "_id"], strictPopulate: false })
 
-        if(!order){
-            return apiErrorResponce(res, "Order Not Found", null, 404)
-        }
         apiSucessResponce(res , "Order Fetched Sucessfully" , order)
     } catch (error) {
         console.log("error in fetchAdminOrder controller : " ,error)
-        apiErrorResponce(res , "internal server error" , null , 500)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
     }
 }
 
