@@ -177,7 +177,7 @@ export const adminFetchForOrderPage = async(req , res)=>{
 
         const data = { 
             total_orders : orders?.length,
-            orders: orders.slice(0, 15),
+            orders: orders,
             pending_orders : pending_orders.length,
             todays_order: todays_order.length
         }
