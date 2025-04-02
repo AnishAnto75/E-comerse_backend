@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const productSchema = mongoose.Schema({
     product_group: { type : mongoose.SchemaTypes.ObjectId, ref : "ProductGroup", required : true },

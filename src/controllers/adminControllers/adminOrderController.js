@@ -194,9 +194,10 @@ export const fetchAdminOrderByIdForOrderPage = async(req , res)=>{
         const {order_id} = req.params
         const order = await Order.findOne({order_id}).populate([{ path: ["user_id"], select:["name"], strictPopulate: false }]).select(["order_id", "user_id", "order_status", "total_amount", "total_no_of_product", "createdAt" ]).limit(15)
 
-        return apiSucessResponce(res , "Order Fetched Successfully" , [order])
+        return apiSucessResponce(res , "Order Fetched Successfully" , order)
+
     } catch (error) {
-        console.log("error in fetchAdminOrderById controller : " ,error)
+        console.log("Error in fetchAdminOrderById controller : " ,error)
         return apiErrorResponce(res , "Internal Server Error" , null , 500)
     }
 }

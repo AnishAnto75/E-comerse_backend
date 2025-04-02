@@ -5,7 +5,7 @@ import verifyUser from "../middlewares/verifyUser.js";
 
 import { CreateProduct, adminFetchAllProduct, adminFetchForProductPage, adminFetchProduct, adminSearchProducts } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
-import { adminFetchAllUsers } from "../controllers/adminControllers/adminUserController.js";
+import { adminFetchAllCustomer, adminFetchForCustomerPage, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus, adminFetchForOrderPage, fetchAdminOrderByIdForOrderPage } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
@@ -16,8 +16,13 @@ import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGro
 
 const router = express.Router()
 
-// User
-router.get('/allUser' , verifyUser ,  adminFetchAllUsers )
+// Customer
+router.get('/customer/allCustomer' , verifyUser ,  adminFetchAllCustomer )
+router.get('/customer/customer-page' , verifyUser ,  adminFetchForCustomerPage )
+router.get('/customer/customer-page/search/:user_id' , verifyUser , fetchCustomerByIdForCustomerPage )
+router.get('/customer/customer-page/search/:user_id' , verifyUser , fetchCustomerByIdForCustomerPage )
+router.get('/customer/customer_id/:user_id' , verifyUser ,  fetchAdminCustomer )
+
 
 // ProductGroup
 router.post('/product-group/create-product-group' , verifyUser , verifingAdmin, createProductGroup)
