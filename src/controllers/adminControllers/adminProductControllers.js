@@ -53,8 +53,10 @@ export const CreateProduct = async(req , res)=>{
 
 export const adminFetchAllProduct = async(req,res)=>{
     try {
-        const selectingList = ["product_brand", "product_barcode", "product_name", "product_total_stock", "product_photos", "product_total_unit_sold", "product_low_in_stock", "hidden" ]
-        const products = await Product.find({deleted : false}).select(selectingList)
+        const selectingList = ["product_brand", "product_barcode", "product_name", "product_total_stock", "product_photos", "product_total_unit_sold", "product_low_in_stock", "product_category", "hidden" ]
+        const products = await Product.find({deleted : false})
+        .populate({ path: ["product_category"], select:["category_name"], strictPopulate: false })
+        .select(selectingList)
 
         return apiSucessResponce(res, "All Products Fetched SucessFully", products)
     } catch (error) {
@@ -65,7 +67,8 @@ export const adminFetchAllProduct = async(req,res)=>{
 
 export const adminFetchForProductPage = async(req, res)=>{
     try {
-        const products = await Product.find({deleted : false}).sort({ product_total_unit_sold: -1 }).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_low_in_stock", "product_total_unit_sold", "product_photos", "hidden" ])
+        const products = await Product.find({deleted : false}).sort({ product_total_unit_sold: -1 })
+        .select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_low_in_stock", "product_total_unit_sold", "product_photos", "hidden" ])
 
         const prdts = products.slice(0, 15)
         const total_products = products.length
@@ -104,8 +107,9 @@ export const adminSearchProducts = async(req,res)=>{
         if(!name){
             return apiErrorResponce(res, "Internal Server Error")
         }
-
-        const products = await Product.find({product_name : {$regex: name, $options: 'i'}, deleted: false}).select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_total_unit_sold", "product_photos", "hidden" ]).limit(15)
+        const products = await Product.find({product_name : {$regex: name, $options: 'i'}, deleted: false})
+        .populate({ path: ["product_category"], select:["category_name"], strictPopulate: false })
+        .select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_photos", "product_total_unit_sold", "product_category", "hidden" ]).limit(15)
 
         return apiSucessResponce(res, "All Products Fetched SucessFully", products)
         
