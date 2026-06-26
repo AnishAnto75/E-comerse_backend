@@ -12,14 +12,11 @@ export const adminFetchAllCustomer = async(req , res)=>{
 
 export const adminFetchForCustomerPage = async(req, res)=>{
     try {
-        const customers = await User.find({deleted : false , user_type : 'user'}).sort({ createdAt: -1 }).select(["user_id", "name", "email", "phoneNumber" , "blocked"]).limit(15)
-
-        const blocked_customer = customers?.filter((customer)=> customer.blocked)
+        const customers = await User.find({deleted : false , blocked : false, user_type : 'user'}).sort({ createdAt: -1 }).select(["user_id", "name", "email", "phoneNumber", "gender"])
 
         const data = {
             customers : customers.slice(0, 15),
             total_customers : customers.length,
-            blocked_customer : blocked_customer.length,
         }
 
         return apiSucessResponce(res, null, data)
@@ -45,8 +42,6 @@ export const fetchAdminCustomer = async(req , res)=>{
     try {
         const {user_id} = req.params
         const customer = await User.findOne({user_id})
-        // .populate({ path: ["user_id"], select:["email", "name", "user_id", "phoneNumber"], strictPopulate: false })
-        // .populate({ path: ["product_details.product_id"], model: "Product", select:['product_photos', "_id"], strictPopulate: false })
 
         apiSucessResponce(res , "Order Fetched Sucessfully" , customer)
     } catch (error) {
@@ -54,3 +49,32 @@ export const fetchAdminCustomer = async(req , res)=>{
         apiErrorResponce(res , "Internal Server Error" , null , 500)
     }
 }
+
+export const adminBlockUser = async(req , res)=>{
+    try {
+        const {user_id} = req.params
+        const customer = await User.findOne({user_id})
+        customer.blocked = true
+        await customer.save()
+
+        apiSucessResponce(res , "adminBlockUser Successfully" , customer)
+    } catch (error) {
+        console.log("error in fetchAdminOrder controller : " ,error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}
+
+export const adminUnBlockUser = async(req , res)=>{
+    try {
+        const {user_id} = req.params
+        const customer = await User.findOne({user_id})
+        customer.blocked = false
+        await customer.save()
+
+        apiSucessResponce(res , "adminBlockUser Successfully" , customer)
+    } catch (error) {
+        console.log("error in fetchAdminOrder controller : " ,error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}
+

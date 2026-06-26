@@ -15,12 +15,13 @@ const addressSchema = mongoose.Schema({
 
 const cartSchema = mongoose.Schema({
     product_id : { type : mongoose.SchemaTypes.ObjectId, ref: 'Product', required: true},
-    quantity : { type : Number, required: true}
+    quantity : { type : Number, required: true, min: [1, "Quantity can't be negative"]
+    }
 })
 
 const userSchema = mongoose.Schema({
     user_id :{ type: String, unique: true, required: true},
-    user_type :{ type: String, enum: ['user'], default: 'user'},
+    user_type :{ type: String, enum: ['user', 'admin'], default: 'user'},
     email : { type: String, immutable: true, unique: true, required: true },
     password : {type: String, required: true},
     name : {type: String, required: true },

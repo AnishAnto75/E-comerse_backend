@@ -3,6 +3,7 @@ import Order from "../../models/OrderModel.js"
 import Product from '../../models/ProductModel.js'
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import {generateRandom12DigitNumber} from '../../utils/generateRandomNumber.js'
+import ProductInventory from "../../models/ProductInventoryModel.js"
 
 export const createOrder = async(req , res)=>{
     try {
@@ -10,77 +11,89 @@ export const createOrder = async(req , res)=>{
         if(!data){return apiErrorResponce(res, "Invalid Credentials")}
 
         const user_id = req.body.user._id
+
         const { total_mrp, total_price, delivery_charges, total_amount, payment_method, delivery_address, product_details, total_no_of_product } = data
-
-        if( !total_mrp || !total_price || !delivery_charges || !total_amount || !payment_method || !delivery_address  || !product_details || typeof(product_details) !== 'object' || !product_details.length || !total_no_of_product ){ return apiErrorResponce(res , "Invalid Credentials")}
-
+        if( !total_mrp || !total_price || !delivery_charges || !total_amount || !payment_method || !delivery_address || !product_details || !total_no_of_product ){ return apiErrorResponce(res , "Invalid Credentials")}
+        
         const {name, phoneNo, alternatePhoneNo, pincode, houseNo, landMark, city, district, state, addressType} = delivery_address
-
         if(!name || !phoneNo || !pincode || !city || !district || !state){return apiErrorResponce(res , "Invalid Credentials")}
 
-        const product_b_s = product_details?.map((product)=> product.product_barcode)
-        let products = await Product.find({product_barcode: product_b_s , deleted: false, hidden: false}).select(['product_stock', 'product_barcode', 'product_min_order_quantity', "product_max_order_quantity"])
-        if(products.length !== product_b_s.length){return apiErrorResponce(res, "Product May be Out Of Stock")}
+        // validating duplicate barcode and Existing Product 
+        const product_barcodes = product_details?.map((product)=> product.product_barcode)
+        let products = await Product.find({product_barcode : product_barcodes , deleted: false, hidden: false, out_of_stock: false})
+        .populate({ path: ["product_inventory_id"], strictPopulate: false })
 
-        let valid = []
-        products.forEach((product, index) => {
-            const inpProd = product_details.filter(p => p.product_barcode === product.product_barcode)[0]
-            let val = true
-            if(product.product_min_order_quantity > inpProd.no_of_product || product.product_max_order_quantity < inpProd.no_of_product){
-                return}
-            product.product_stock.forEach((prod, index)=>{
-                if(!val){return}
-                if( !prod.hidden && prod.mrp == inpProd.product_mrp && prod.price == inpProd.product_price && prod.batch_no == inpProd.product_batch_no && prod.stock >= inpProd.no_of_product){
-                    valid.push(true)
-                    val = false
-                }
-                // console.log({index, prod, inpProd})
-            })
-        });
-        if(valid.length !== product_b_s.length){return apiErrorResponce(res, "Product May be Out Of Stock")}
+        if(products.length !== product_barcodes.length){return apiErrorResponce(res, "Product unavailable")}
 
-        const orderData = {
-            order_id: `ORD${generateRandom12DigitNumber()}`,
-            user_id,
-            total_mrp,
-            total_price,
-            delivery_charges,
-            total_amount,
-            payment_method,
-            delivery_address : { name, phoneNo, alternatePhoneNo, pincode, houseNo, landMark, city, district, state, addressType },
-            order_status: {
-                placed:{ status: true, date: new Date()},
-            },
-            product_details,
-            total_no_of_product,
-        }
-
-        const newOrder = new Order(orderData)
-        await newOrder.save()
-        console.log(newOrder)
-
-        const user = await User.findOne({_id : user_id})
-        user.order_id.push(newOrder._id) 
-        user.cart = []
-        await user.save()
-
-        product_details?.forEach(async( inpProd, index ) => {
-            const product = await Product.findOne({product_barcode: inpProd.product_barcode})
-            product.product_total_stock = Number(product.product_total_stock) - Number(inpProd.no_of_product)
-            product.product_total_unit_sold = Number(product.product_total_unit_sold) + Number(inpProd.no_of_product)
-            product.product_stock.map( (prod, index1) => {
-                if( !prod.hidden && prod.mrp == inpProd.product_mrp && prod.price == inpProd.product_price && prod.batch_no == inpProd.product_batch_no && prod.stock >= inpProd.no_of_product){
-                    if(Number(prod.stock) == Number(inpProd.no_of_product)){
-                        prod.hidden = true
-                    }
-                    console.log(index, index1, Number(prod.stock) , Number(inpProd.no_of_product), prod.hidden)
-                    prod.stock = Number(prod.stock) - Number(inpProd.no_of_product)
-                    return prod
-                } else {return prod}
-            })
-            await product.save()
+        // validating inventory
+        const validInventory = []
+        await product_details?.map(( inpProd, index ) => {
+            const product = products.filter(product=> product.product_barcode === inpProd.product_barcode)
+            if(product){
+                if(Number(product[0].product_inventory_id.product_stock[0].stock) < Number(inpProd.no_of_product)){ return } 
+                else { validInventory.push("valid") }
+            }
         })
-        return apiSucessResponce(res, "Order Placed Sucessfully", newOrder, 201 )
+        if(products.length == validInventory.length){
+
+            const orderData = {
+                order_id: `ORD${generateRandom12DigitNumber()}`,
+                user_id,
+                total_mrp,
+                total_price,
+                delivery_charges,
+                total_amount,
+                payment_method,
+                total_no_of_product,
+                delivery_address : { name, phoneNo, alternatePhoneNo, pincode, houseNo, landMark, city, district, state, addressType },
+                product_details,
+                order_status: {
+                    placed:{ status: true, date: new Date()},
+                }
+            }
+
+            const newOrder = new Order(orderData)
+            await newOrder.save()
+
+            // adding order id to user
+            try {
+                const user = await User.findOne({_id : user_id})
+                user.order_id.push(newOrder._id)
+                user.cart = []
+                await user.save()
+            } catch (error) {
+                console.log("error in createOrder controller (adding order id to user) : ", error  )
+                await Order.findOneAndDelete({_id : newOrder._id})          // deleting the order due to error in saving the order id in user 
+                throw new Error("internal server error");
+            }
+
+            // adjusting the product Inventory
+            try {
+                product_details?.forEach(async( inpProd, index ) => {
+                    const productInventory = await ProductInventory.findOne({product_barcode: inpProd.product_barcode})
+                    if(productInventory){
+                        productInventory.product_total_stock = Number(productInventory.product_total_stock) - Number(inpProd.no_of_product)
+                        if(Number(productInventory.product_stock[0].stock) == Number(inpProd.no_of_product) ){
+                            productInventory.product_stock.splice(0, 1)
+                        } 
+                        else if(Number(productInventory.product_stock[0].stock) > Number(inpProd.no_of_product)){
+                            productInventory.product_stock[0].stock = Number(productInventory.product_stock[0].stock) -  Number(inpProd.no_of_product)
+                        } 
+                        else {return}
+                        await productInventory.save()
+                    }
+                })
+            } catch (error) {
+                console.log("error in createOrder controller (adjusting the product Inventory) : ", error  )
+                throw new Error("internal server error");
+            }
+
+            return apiSucessResponce(res, "Order Placed Successfully", newOrder, 201 )
+
+        } else{
+            console.log("returned For Low Quantity Stock")
+            return apiErrorResponce(res, "Product May Went Out Of Stock Kindly Re-Order")
+        }
     } catch (error){
         console.log("error in createOrder controller : " ,error)
         return apiErrorResponce(res , "internal server error" , null , 500)

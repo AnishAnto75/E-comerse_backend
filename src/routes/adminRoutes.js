@@ -3,82 +3,101 @@ import express from "express";
 import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
-import { CreateProduct, adminFetchAllProduct, adminFetchForProductPage, adminFetchProduct, adminSearchProducts } from "../controllers/adminControllers/adminProductControllers.js";
+import { CreateProduct, adminFetchAllProduct, adminFetchForProductPage, adminFetchProduct, adminFetchProductByCategory, adminSearchProducts } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminAddNewStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
-import { adminFetchAllCustomer, adminFetchForCustomerPage, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
+import { adminBlockUser, adminFetchAllCustomer, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, updateOrderStatusToCanceled, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus, adminFetchForOrderPage, fetchAdminOrderByIdForOrderPage } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
-import { createProductCategory, fetchAllProductCategory } from "../controllers/adminControllers/adminProductCategoryController.js";
+import { createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminCreateSupplier, adminFetchAllSuppliers, adminFetchSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/adminPurchaseController.js";
 import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGroupsByNameForCreateBanner, adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners, fetchBanner, hideBanner } from "../controllers/adminControllers/adminBannerController.js";
+import { createProductBrand , fetchAllBrand, adminEditBrand, fetchBrand, adminSearchBrand} from "../controllers/adminControllers/adminProductBrandController";
 
 const router = express.Router()
 
 // Customer
-router.get('/customer/allCustomer' , verifyUser ,  adminFetchAllCustomer )
-router.get('/customer/customer-page' , verifyUser ,  adminFetchForCustomerPage )
-router.get('/customer/customer-page/search/:user_id' , verifyUser , fetchCustomerByIdForCustomerPage )
-router.get('/customer/customer-page/search/:user_id' , verifyUser , fetchCustomerByIdForCustomerPage )
-router.get('/customer/customer_id/:user_id' , verifyUser ,  fetchAdminCustomer )
+router.get('/customer/allCustomer' , verifyUser, verifingAdmin,  adminFetchAllCustomer )
+router.get('/customer/customer-page' , verifyUser, verifingAdmin,  adminFetchForCustomerPage )
+router.get('/customer/customer-page/search/:user_id' , verifyUser, verifingAdmin, fetchCustomerByIdForCustomerPage )
+router.get('/customer/customer_id/:user_id' , verifyUser, verifingAdmin,  fetchAdminCustomer )
+router.get('/customer/block/customer_id/:user_id' , verifyUser, verifingAdmin,  adminBlockUser )
+router.get('/customer/unBlock/customer_id/:user_id' , verifyUser, verifingAdmin,  adminUnBlockUser )
 
 
 // ProductGroup
 router.post('/product-group/create-product-group' , verifyUser , verifingAdmin, createProductGroup)
 router.get('/product-group/all-groups' , verifyUser , verifingAdmin, fetchAllProductGroup)
 
+
 // ProductCategory
 router.post('/product-category/create-product-category' , verifyUser , verifingAdmin, createProductCategory)
 router.get('/product-category/all-categories' , verifyUser , verifingAdmin, fetchAllProductCategory)
+router.get('/product-category/group-id/:id' , verifyUser , verifingAdmin, fetchCategoriesByGroup)
+
+
+//ProductBrand
+router.post('/brand/create-brand', verifyUser, verifingAdmin, createProductBrand)
+router.get('/brand/brand-id/:id', verifyUser, verifingAdmin, fetchBrand )
+router.get('/brand/all-brand', verifyUser, verifingAdmin, fetchAllBrand )
+router.get('/brand/search' , verifyUser, verifingAdmin, adminSearchBrand)
+router.post('/brand/edit/:id' , verifyUser, verifingAdmin, adminEditBrand )
+
 
 // Products
-router.post('/product/add-product' , verifyUser ,  CreateProduct)
-router.get('/product/search' , verifyUser , adminSearchProducts)
-router.get('/product/all-product' , verifyUser , adminFetchAllProduct)
-router.get('/product/product-page' , verifyUser , adminFetchForProductPage)
-router.get('/product/product_id/:id' , verifyUser ,  adminFetchProduct)
+router.post('/product/add-product' , verifyUser, verifingAdmin,  CreateProduct)
+router.get('/product/search' , verifyUser, verifingAdmin, adminSearchProducts)
+router.get('/product/all-product' , verifyUser, verifingAdmin, adminFetchAllProduct)
+router.get('/product/product-page' , verifyUser, verifingAdmin, adminFetchForProductPage)
+router.get('/product/product_id/:id' , verifyUser, verifingAdmin, adminFetchProduct)
+router.get('/product/category/:id' , verifyUser, verifingAdmin, adminFetchProductByCategory)
+
 
 //Supplier
-router.post('/supplier/create-supplier' , verifyUser , adminCreateSupplier)
-router.get('/supplier/all-supplier' , verifyUser , adminFetchAllSuppliers)
-router.get('/supplier/:id' , verifyUser ,  adminFetchSupplier)
+router.post('/supplier/create-supplier' , verifyUser, verifingAdmin, adminCreateSupplier)
+router.get('/supplier/all-supplier' , verifyUser, verifingAdmin, adminFetchAllSuppliers)
+router.get('/supplier/:id' , verifyUser, verifingAdmin, adminFetchSupplier)
+
 
 //Purchase
-router.post('/purchase/create-purchase' , verifyUser , adminCreatePurchase)
-router.get('/purchase/all-purchases' , verifyUser ,  adminFetchAllPurchases)
-router.get('/purchase/all-suppliers' , verifyUser ,  adminFetchAllSuppliersForPurchaseBook)
-router.get('/purchase/:id' , verifyUser ,  adminFetchPurchaseBook)
-router.get('/purchase/product/barcode/:barcode' , verifyUser ,  adminFetchProductsByBarcodeForPurchaseEntry)
-router.get('/purchase/product/name/:name' , verifyUser , adminFetchProductsByNameForPurchaseEntry)
+router.post('/purchase/create-purchase' , verifyUser, verifingAdmin, adminCreatePurchase)
+router.get('/purchase/all-suppliers' , verifyUser, verifingAdmin, adminFetchAllSuppliersForPurchaseBook)
+router.get('/purchase/product/barcode/:id' , verifyUser, verifingAdmin , adminFetchProductsByBarcodeForPurchaseEntry)
+router.get('/purchase/product/name/:name' , verifyUser, verifingAdmin, adminFetchProductsByNameForPurchaseEntry)
+router.get('/purchase/all-purchases' , verifyUser, verifingAdmin, adminFetchAllPurchases)
+router.get('/purchase/purchase-id/:id' , verifyUser, verifingAdmin, adminFetchPurchaseBook)
 
 // Staff
-router.post('/staff/add-staff' , verifyUser ,  adminAddNewStaff )
-router.get('/staff/all-staff' , verifyUser ,  adminFetchAllStaffs )
-router.get('/staff/:id' , verifyUser ,  adminFetchStaff )
+router.post('/staff/add-staff' , verifyUser, verifingAdmin , adminAddNewStaff )
+router.get('/staff/all-staff' , verifyUser, verifingAdmin, adminFetchAllStaffs )
+router.get('/staff/:id' , verifyUser, verifingAdmin, adminFetchStaff )
+
 
 //Orders
-router.get('/order/all-order' , verifyUser ,  fetchAllOrders )
-router.get('/order/order_id/:order_id' , verifyUser ,  fetchAdminOrder )
-router.patch('/order/update/confirmed/:id' , verifyUser ,  updateOrderStatusToConfirmed )
-router.patch('/order/update/out/:id' , verifyUser ,  updateOrderStatusToOut )
-router.patch('/order/update/delivered/:id' , verifyUser ,  updateOrderStatusToDelivered )
-router.patch('/order/update/cancel/:id' , verifyUser ,  updateOrderStatusToCanceled )
-router.get('/order/get_staff/out/:username' , verifyUser ,  adminFetchDeliveryStaffByNameForOrderStatus )
-router.get('/order/get_staff/out/id/:id' , verifyUser ,  adminFetchDeliveryStaffByIdForOrderStatus )
-router.get('/order/order-page' , verifyUser ,  adminFetchForOrderPage )
-router.get('/order/order-page/search/:order_id' , verifyUser , fetchAdminOrderByIdForOrderPage )
+router.get('/order/all-order' , verifyUser, verifingAdmin, fetchAllOrders )
+router.get('/order/order_id/:order_id' , verifyUser, verifingAdmin, fetchAdminOrder )
+router.patch('/order/update/confirmed/:id' , verifyUser, verifingAdmin, updateOrderStatusToConfirmed )
+router.patch('/order/update/out/:id' , verifyUser, verifingAdmin, updateOrderStatusToOut )
+router.patch('/order/update/delivered/:id' , verifyUser, verifingAdmin, updateOrderStatusToDelivered )
+router.patch('/order/update/cancel/:id' , verifyUser, verifingAdmin, updateOrderStatusToCanceled )
+router.get('/order/get_staff/out/:username' , verifyUser, verifingAdmin, adminFetchDeliveryStaffByNameForOrderStatus )
+router.get('/order/get_staff/out/id/:id' , verifyUser, verifingAdmin, adminFetchDeliveryStaffByIdForOrderStatus )
+router.get('/order/order-page' , verifyUser, verifingAdmin, adminFetchForOrderPage )
+router.get('/order/order-page/search/:order_id' , verifyUser, verifingAdmin, fetchAdminOrderByIdForOrderPage )
+
 
 // Banner
-router.post('/banner/create-banner', verifyUser, createBanner)
-router.get('/banner/create/product-name/:name', verifyUser, adminFetchProductsByNameForCreateBanner)
-router.get('/banner/create/product-barcode/:barcode', verifyUser, adminFetchProductsByBarcodeForCreateBanner)
-router.get('/banner/create/group-name/:name', verifyUser, adminFetchGroupsByNameForCreateBanner)
-router.get('/banner/create/category-name/:name', verifyUser, adminFetchCategoryByNameForCreateBanner)
-router.patch('/banner/edit-banner', verifyUser, adminEditBanner)
-router.get('/banner/all-banners', verifyUser, fetchAllBanners)
-router.get('/banner/banner_id/:banner_id', verifyUser, fetchBanner)
-router.patch('/banner/delete-banner/:id', verifyUser, deleteBanner)
-router.patch('/banner/hide-banner/:id', verifyUser, hideBanner)
+router.post('/banner/create-banner', verifyUser, verifingAdmin, createBanner)
+router.get('/banner/create/product-name/:name', verifyUser, verifingAdmin, adminFetchProductsByNameForCreateBanner)
+router.get('/banner/create/product-barcode/:barcode', verifyUser, verifingAdmin, adminFetchProductsByBarcodeForCreateBanner)
+router.get('/banner/create/group-name/:name', verifyUser, verifingAdmin, adminFetchGroupsByNameForCreateBanner)
+router.get('/banner/create/category-name/:name', verifyUser, verifingAdmin, adminFetchCategoryByNameForCreateBanner)
+router.patch('/banner/edit-banner', verifyUser, verifingAdmin, adminEditBanner)
+router.get('/banner/all-banners', verifyUser, verifingAdmin, fetchAllBanners)
+router.get('/banner/banner_id/:banner_id', verifyUser, verifingAdmin, fetchBanner)
+router.patch('/banner/delete-banner/:id', verifyUser, verifingAdmin, deleteBanner)
+router.patch('/banner/hide-banner/:id', verifyUser, verifingAdmin, hideBanner)
+
 
 export default router

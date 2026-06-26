@@ -9,3 +9,8 @@ export const validateMongooseId = (id)=>{
     }
     return false;
 }
+
+export const validateDate = (dateString) => {
+    const isDate = (dateString) => !isNaN(Date.parse(dateString))
+    return isDate(dateString)
+}

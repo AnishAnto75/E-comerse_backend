@@ -1,8 +1,9 @@
+import ProductInventory from "../../models/ProductInventoryModel.js"
 import Product from "../../models/ProductModel.js"
 import Purchase from "../../models/PurchaseModel.js"
 import Supplier from "../../models/SupplierModel.js"
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
-import { validateMongooseId} from "../../utils/validateTypes.js"
+import { validateDate, validateMongooseId} from "../../utils/validateTypes.js"
 
 export const adminCreatePurchase = async(req, res)=>{
     try {
@@ -10,43 +11,85 @@ export const adminCreatePurchase = async(req, res)=>{
         const {data} = req.body
         if(!data){return apiErrorResponce(res, "Invalid Credentials")}
 
-        if(!data.supplier_id || !data.invoice_no || !data.products || !data.total_purchase_amount || !data.payment_done){return apiErrorResponce(res, "Invalid Credentials")}
+        if(!data.supplier_id || !data.invoice_no || !data.products || !data.total_purchase_amount ){return apiErrorResponce(res, "Invalid Credentials")}
+
         data['added_by'] = user._id
 
+        const validSupplierId = validateMongooseId(data.supplier_id) 
+        if(!validSupplierId) {return apiErrorResponce(res, "Invalid Credentials")}
+
+        const validSupplier = await Supplier.findOne({_id : data.supplier_id})
+        if(!validSupplier) {return apiErrorResponce(res, "Invalid Credentials")}
+
         const validatePurchase = await Purchase.findOne({supplier_id: data.supplier_id, invoice_no: data.invoice_no })
-        if(validatePurchase){return apiErrorResponce(res , "Invoice No Already Entered")}
+        if(validatePurchase){return apiErrorResponce(res , "Invoice No Already Existed")}
 
-        const product_barcodes = data.products?.map((product)=>{return product.product_barcode})
-        let products = await Product.find({product_barcode: product_barcodes, deleted: false})
-        if(product_barcodes.length !== products.length){return apiErrorResponce(res, "Few product Not Found")}
+        const productBarcodes = []
+        data.products?.map((product, index)=>productBarcodes.push(product.product_barcode))
 
-        const filteredProducts = products.map((product, index) => {
-            const ps = data.products.filter(ps=> ps.product_barcode == product.product_barcode)[0]
-            const dta = {
-                batch_no: ps.batch_no ,
-                stock : ps.quantity_recieved,
-                quantity : ps.quantity,
-                manufacture_date: ps.manufacture_date,
-                expire_date: ps.expire_date,
-                best_before: ps.best_before,
-                mrp: ps.mrp,
-                purchase_cost : ps.purchase_cost ,
-                other_expences : ps.other_expences,
-                gst : ps.gst,
-                price: ps.price,
-                added_by : user._id
+        const validProduct = await Product.find({product_barcode : productBarcodes, deleted: false})
+        if(validProduct.length !== data.products.length) {return apiErrorResponce(res, "Invalid Credentials")}
+
+        let validProduct1 = true
+        data.products?.forEach((product, index) => {
+            if(product.expire_date){
+                if(!validateDate(product.expire_date)){ validProduct1 = false; return }
             }
-            product.product_stock.push(dta)
-            product.product_total_stock = parseInt(ps.quantity_recieved) + parseInt(product.product_total_stock)
-            return product
+            if(product.manufacture_date){
+                if(!validateDate(product.manufacture_date) ){ validProduct1 = false; return }
+            }
+            if(product.quantity_recieved <= 1){
+                validProduct1 = false; return
+            }
+            if(!product.product_barcode || !product.quantity_recieved || !product.size || !product.mrp || !product.purchase_cost || !product.gst || !product.other_expences || !product.price){
+                validProduct1 = false
+                return
+            }
         })
+        if(!validProduct1){return apiErrorResponce(res, "Invalid Credentials")}
 
-        const purchase = new Purchase(data)
+        const formatedData = {
+            supplier_id : data.supplier_id,
+            invoice_no : data.invoice_no,
+            products : data.products,
+            total_purchase_amount : data.total_purchase_amount,
+            discount_received : data.discount_received,
+            total_amount : data.total_amount,
+            added_by : user._id
+        }
+
+        const purchase = new Purchase(formatedData)
         await purchase.save()
 
-        filteredProducts?.forEach(async(pro, index) => {
-            await Product.findOneAndUpdate({ _id: pro._id }, { product_stock: pro.product_stock, product_total_stock: pro.product_total_stock }, {new: true} )
+        let isInventorySaved = false
+        data.products?.forEach(async(product, index) => {
+            try {
+                const productInventory = await ProductInventory.findOne({product_barcode : product.product_barcode})
+                const formatedData = {
+                    batch_no : product.batch_no,
+                    stock : product.quantity_recieved,
+                    size : product.size,
+                    manufacture_date : product.manufacture_date,
+                    expire_date : product.expire_date,
+                    best_before : product.best_before,
+                    mrp : product.mrp,
+                    purchase_cost : product.purchase_cost ,
+                    gst : product.gst ,
+                    other_expences : product.other_expences ,
+                    price: product.price
+                }
+                productInventory.product_stock.push(formatedData)
+                productInventory.product_total_stock = Number(productInventory.product_total_stock) + Number(product.quantity_recieved)
+                await productInventory.save()
+                isInventorySaved = true
+            } catch (error) {
+                console.log(error)
+                await Purchase.deleteOne({_id : purchase._id})
+                isInventorySaved = false   
+                return
+            }
         })
+        if(isInventorySaved) return apiErrorResponce(res, "Invalid Credentials")
 
         return apiSucessResponce(res , "Purchase Book created", purchase, 201)
 
@@ -56,9 +99,11 @@ export const adminCreatePurchase = async(req, res)=>{
     }
 }
 
+
 export const adminFetchAllPurchases = async(req,res)=>{
     try {
-        const purchaseBooks = await Purchase.find().populate([{ path: 'supplier_id', strictPopulate: false }]);
+        const purchaseBooks = await Purchase.find()
+        .populate([{ path: 'supplier_id', strictPopulate: false }]);
         return apiSucessResponce(res, "Purchase Books Fetched Sucessfully", purchaseBooks)
     } catch (error) {
         console.log("error in fetchAllPurchases controller" , error)
@@ -78,10 +123,11 @@ export const adminFetchPurchaseBook = async(req,res)=>{
     }
 }
 
+
 export const adminFetchAllSuppliersForPurchaseBook = async(req, res)=>{
     try {
-        const suppliers = await Supplier.find().select(['supplier_name', "supplier_id"])
-        return apiSucessResponce(res, "All Suppliers Fetched Sucessfully", suppliers)
+        const suppliers = await Supplier.find().select(["_id", "supplier_id", "supplier_name"])
+        return apiSucessResponce(res, "All Suppliers Fetched Successfully", suppliers)
     } catch (error) {
         console.log("error in adminFetchAllSuppliersForPurchaseBook controller" , error)
         return apiErrorResponce(res , "internal Server Error")
@@ -90,9 +136,12 @@ export const adminFetchAllSuppliersForPurchaseBook = async(req, res)=>{
 
 export const adminFetchProductsByBarcodeForPurchaseEntry = async(req, res)=>{
     try {
-        const {barcode} = req.params
-        const products = await Product.findOne({product_barcode : barcode, deleted: false}).select(['_id', 'product_barcode', 'product_name', 'product_total_stock', 'product_stock', ])
-        return apiSucessResponce(res, "Products found Successfully", products)
+        const {id} = req.params
+        const product = await Product.findOne({product_barcode : id, deleted: false}).select(['_id', 'product_barcode', 'product_name'])
+        if(product){
+            return apiSucessResponce(res, "Product found Successfully", product)
+        }
+        return apiErrorResponce(res , "Invalid Barcode")
     } catch (error) {
         console.log("error in adminFetchProductsByBarcodeForPurchaseEntry controller" , error)
         return apiErrorResponce(res , "internal Server Error")
@@ -102,7 +151,7 @@ export const adminFetchProductsByBarcodeForPurchaseEntry = async(req, res)=>{
 export const adminFetchProductsByNameForPurchaseEntry = async(req, res)=>{
     try {
         const { name } = req.params;
-        const products = await Product.find({product_name : {$regex: name, $options: 'i'} , deleted: false}).select(['_id', 'product_barcode', 'product_name', 'product_total_stock', 'product_stock', ]).limit(5)
+        const products = await Product.find({product_name : {$regex: name, $options: 'i'} , deleted: false}).select(['_id', 'product_barcode', 'product_name' ]).limit(10)
         return apiSucessResponce(res, "Products found Successfully", products)
     } catch (error) {
         console.log("error in adminFetchProductsByBarcodeForPurchaseEntry controller" , error)

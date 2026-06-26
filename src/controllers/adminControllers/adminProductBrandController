@@ -1,0 +1,99 @@
+import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
+import ProductBrand from "../../models/ProductBrandModel.js"
+import { validateMongooseId } from "../../utils/validateTypes.js"
+
+export const createProductBrand = async(req, res)=>{
+    try {
+        const{Brand_name, Brand_description, Brand_logo} = req.body?.data
+
+        const validateBrand = await ProductBrand.findOne({Brand_name})
+        if(validateBrand){ return apiErrorResponce(res, "Brand Already Exist", null, 400)}
+
+        const formatedData = {
+            Brand_name,
+            Brand_description,
+            Brand_logo
+        }
+
+        const newBrand = new ProductBrand(formatedData)
+        await newBrand.save()
+
+        return apiSucessResponce(res , "Brand Created Successfully", newBrand, 201)
+    } catch (error) {
+        console.log("error in createProductBrand :" , error)
+        return apiErrorResponce(res, "internal server error", null, 500 )
+    }
+}
+
+export const adminEditBrand = async(req,res)=>{
+    try {
+        
+        const {id} = req.params
+        if(!validateMongooseId(id)){return apiErrorResponce(res, "invalid Credentials")}
+         
+        const brandData = req.body.data;
+        if(!brandData){return apiErrorResponce(res, "Invalid credentials")}
+        
+        const brand = await ProductBrand.findOne({_id: id})
+        if(!brand){return apiErrorResponce(res, "invalid credentials")}
+
+        if(brandData.Brand_name !== brand.Brand_name){
+            const validatingBrand = await ProductBrand.findOne({Brand_name: brandData.Brand_name})
+            if(validatingBrand){ return apiErrorResponce(res, "Brand Name Already Exist")}
+        }
+
+        brand.Brand_name = brandData.Brand_name
+        brand.Brand_description = brandData.Brand_description
+        brand.Brand_logo = brandData.Brand_logo
+        await brand.save()
+    
+        return apiSucessResponce(res, "Brand Edited SuccessFully", {brand})
+        
+    } catch (error) {
+        console.log("error in adminSearchBrand controller" , error)
+        return apiErrorResponce(res , "Internal Server Error")
+    }
+}
+
+export const fetchBrand = async(req, res)=>{
+    try {
+        const {id} = req.params
+
+        const brand = await ProductBrand.findOne({_id : id}).select(["Brand_name", "Brand_description", "Brand_logo"])
+        return apiSucessResponce(res, "Brand Fetched Successfully" , brand) 
+    } catch (error) {
+        console.log("error in fetchBrand :" , error)
+        return apiErrorResponce(res, "internal server error", null, 500 )
+    }
+}
+
+export const fetchAllBrand = async(req, res)=>{
+    try {
+        const brands = await ProductBrand.find().select(["Brand_name", "Brand_description", "Brand_logo"])
+
+        return apiSucessResponce(res , "Brand Fetched Successfully", brands, 200)
+    } catch (error) {
+        console.log("error in createProductBrand :" , error)
+        return apiErrorResponce(res, "internal server error", null, 500 )
+    }
+}
+
+export const adminSearchBrand = async(req,res)=>{
+    try {
+        
+        const { name } = req.query;
+        if(!name){
+            return apiErrorResponce(res, "Internal Server Error")
+        }
+        const brands = await ProductBrand.find({Brand_name : {$regex: name, $options: 'i'}, deleted: false})
+        .select(["Brand_name", "Brand_description", "Brand_logo"])
+
+        return apiSucessResponce(res, "All Brands Fetched SucessFully", brands)
+        
+    } catch (error) {
+        console.log("error in adminSearchBrand controller" , error)
+        return apiErrorResponce(res , "Internal Server Error")
+    }
+}
+
+

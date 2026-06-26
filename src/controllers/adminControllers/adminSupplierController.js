@@ -46,6 +46,8 @@ export const adminFetchAllSuppliers = async(req,res)=>{
     }
 }
 
+
+
 export const adminFetchSupplier = async(req,res)=>{
     try {
         const {id} = req.params

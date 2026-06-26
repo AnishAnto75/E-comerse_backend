@@ -2,9 +2,8 @@ import Product from "../../models/ProductModel.js"
 import User from "../../models/UserModel.js"
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 
-export const addCart = async(req , res)=>{
+export const addToCart = async(req , res)=>{
     try {
-
         const usr = req.body.user
         const data = req.body.data
         if(!data){return apiErrorResponce(res, "Invalid Crdentials")}
@@ -12,96 +11,29 @@ export const addCart = async(req , res)=>{
         const {product_barcode , quantity} = data
         if(!product_barcode){return apiErrorResponce(res , "Invalid Credentials")}
 
-        const product_details = await Product.findOne({product_barcode, deleted: false, hidden: false, product_out_of_stock: false})
-        if(!product_details){return apiErrorResponce(res , "Product Went OutOfStock")}
+        const product_details = await Product.findOne({product_barcode, deleted: false, hidden: false, out_of_stock: false})
+        if(!product_details){return apiErrorResponce(res , "Product Currently Unavailable")}
 
-        if (!usr.cart){
+        if (!usr.cart?.length){
             try {
                 const cart = [{
                     product_id : product_details._id ,
                     quantity : 1
                 }]
-                const userCart = await User.findOneAndUpdate({_id : usr._id},{cart} , {new : true}).populate({ path: ["cart.product_id"], strictPopulate: false }).select('cart')
+                const userCart = await User.findOneAndUpdate({_id : usr._id},{cart} , {returnDocument: 'after'})
 
-                const postCart = userCart.cart?.map(product => ({
-                    product_id : {
-                        _id :  product.product_id._id,
-                        product_brand:  product.product_id.product_brand,
-                        product_barcode:  product.product_id.product_barcode,
-                        product_name:  product.product_id.product_name,
-                        product_total_stock:  product.product_id.product_total_stock,
-                        product_offer:  product.product_id.product_offer,
-                        product_net_unit:  product.product_id.product_net_unit,
-                        product_out_of_stock:  product.product_id.product_out_of_stock,
-                        product_min_order_quantity:  product.product_id.product_min_order_quantity,
-                        product_max_order_quantity:  product.product_id.product_max_order_quantity,
-                        product_photos:  product.product_id.product_photos,
-                        product_varient:  product.product_id.product_varient,
-                        product_stock: {
-                            stock: product.product_id.product_stock[0].stock ,
-                            quantity: product.product_id.product_stock[0].quantity,
-                            mrp: product.product_id.product_stock[0].mrp,
-                            batch_no: product.product_id.product_stock[0].batch_no,
-                            price: product.product_id.product_stock[0].price ,
-                            manufacture_date: product.product_id.product_stock[0].manufacture_date ,
-                            expire_date: product.product_id.product_stock[0].expire_date ,
-                        },
-                        hidden:  product.product_id.hidden ,
-                        deleted:  product.product_id.deleted ,
-                    },
-                    quantity: product.quantity
-                }))
-                return apiSucessResponce(res , "Added sucessfully", postCart )
+                return apiSucessResponce(res , "Added successfully" , userCart.cart )
             } catch (error) {
                 apiErrorResponce(res , "Internal Server Error" , null , 500)
             }
         }
 
         const cartProducts = usr.cart
+        cartProducts.push({product_id: product_details._id, quantity: quantity ? quantity : 1 })
 
-        let changeProducts = true
-        const newCartProducts =  cartProducts.map(product =>{
-            if(product.product_id._id.toString() == product_details._id.toString()){
-                changeProducts = false
-                return {product_id : product.product_id , quantity : quantity ? quantity : product.quantity}
-            } else {
-                return {product_id : product.product_id , quantity : product.quantity}
-            }
-        })
-        if(changeProducts){ newCartProducts.push({product_id: product_details._id, quantity: quantity ? quantity : 1 })}
+        const userCart = await User.findOneAndUpdate({_id : usr._id},{cart: cartProducts} , {returnDocument: 'after'})
 
-        const userCart = await User.findOneAndUpdate({_id : usr._id},{cart: newCartProducts} , {new : true}).populate({ path: ["cart.product_id"], strictPopulate: false }).select("cart")
-
-        const cart = userCart.cart?.map(product => ({
-            product_id : {
-                _id :  product.product_id._id,
-                product_brand:  product.product_id.product_brand,
-                product_barcode:  product.product_id.product_barcode,
-                product_name:  product.product_id.product_name,
-                product_total_stock:  product.product_id.product_total_stock ,
-                product_offer:  product.product_id.product_offer ,
-                product_net_unit:  product.product_id.product_net_unit ,
-                product_out_of_stock:  product.product_id.product_out_of_stock ,
-                product_min_order_quantity:  product.product_id.product_min_order_quantity ,
-                product_max_order_quantity:  product.product_id.product_max_order_quantity ,
-                product_photos:  product.product_id.product_photos ,
-                product_varient:  product.product_id.product_varient ,
-                product_stock: {
-                    stock: product.product_id.product_stock[0].stock ,
-                    quantity: product.product_id.product_stock[0].quantity,
-                    mrp: product.product_id.product_stock[0].mrp,
-                    batch_no: product.product_id.product_stock[0].batch_no,
-                    price: product.product_id.product_stock[0].price ,
-                    manufacture_date: product.product_id.product_stock[0].manufacture_date ,
-                    expire_date: product.product_id.product_stock[0].expire_date 
-                } ,
-                hidden:  product.product_id.hidden ,
-                deleted:  product.product_id.deleted ,
-            },
-            quantity: product.quantity
-        }))
-
-        return apiSucessResponce(res , "Added sucessfully" ,  cart )
+        return apiSucessResponce(res , "Added successfully" ,  userCart.cart )
 
     } catch (error) {
         console.log("addCart controller error :", error)
@@ -112,53 +44,89 @@ export const addCart = async(req , res)=>{
 export const removeCart = async(req , res)=>{
     try {
         const user = req.body.user
-        const data = req.body.data
-        if(!data){return apiErrorResponce(res, "Invalid Crdentials")}
+        const id = req.body.data
+        if(!id){return apiErrorResponce(res, "Invalid Crdentials")}
 
-        const {product_barcode} = data
-        if(!product_barcode){ return apiErrorResponce(res , "Invalid Credentials")}
-
-        const cartProducts = user.cart.map(product =>{
-            if(product.product_id.product_barcode.toString() == product_barcode.toString()){return} 
-            else { return {product_id : product.product_id._id , quantity : product.quantity}}
+        const cartProducts = user.cart?.map(product =>{
+            if(product.product_id.toString() == id.toString()){return} 
+            else { return {product_id : product.product_id , quantity : product.quantity}}
         })
 
         let newCartProducts = cartProducts.filter( (e)=> {return e }); // Removes the null and undefined values 
 
-        const userCart = await User.findOneAndUpdate({_id : user._id},{cart: newCartProducts} , {new : true}).populate({ path: ["cart.product_id"], strictPopulate: false }).select("cart")
+        const userCart = await User.findOneAndUpdate({_id : user._id},{cart: newCartProducts} , {returnDocument: 'after'})
+            .populate({ path: ["cart.product_id"],
+                populate: {path: 'product_brand product_inventory_id' , select: "Brand_name product_stock.stock product_stock.size product_stock.mrp product_stock.price"},
+                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "hidden", "deleted", "out_of_stock"  ], 
+                strictPopulate: false })
+            .select("cart")
 
-        const cart = userCart.cart?.map(product => ({
-            product_id : {
-                _id :  product.product_id._id,
-                product_brand:  product.product_id.product_brand,
-                product_barcode:  product.product_id.product_barcode,
-                product_name:  product.product_id.product_name,
-                product_total_stock:  product.product_id.product_total_stock ,
-                product_offer:  product.product_id.product_offer ,
-                product_net_unit:  product.product_id.product_net_unit ,
-                product_out_of_stock:  product.product_id.product_out_of_stock ,
-                product_min_order_quantity:  product.product_id.product_min_order_quantity ,
-                product_max_order_quantity:  product.product_id.product_max_order_quantity ,
-                product_photos:  product.product_id.product_photos ,
-                product_varient:  product.product_id.product_varient ,
-                product_stock: {
-                    stock: product.product_id.product_stock[0].stock ,
-                    quantity: product.product_id.product_stock[0].quantity,
-                    mrp: product.product_id.product_stock[0].mrp,
-                    batch_no: product.product_id.product_stock[0].batch_no,
-                    price: product.product_id.product_stock[0].price ,
-                    manufacture_date: product.product_id.product_stock[0].manufacture_date ,
-                    expire_date: product.product_id.product_stock[0].expire_date ,
-                } ,
-                hidden:  product.product_id.hidden ,
-                deleted:  product.product_id.deleted ,
-            },
-            quantity: product.quantity
-        }))
-
-        return apiSucessResponce(res, "Removed Sucessfully" , cart  )
+        return apiSucessResponce(res, "Removed Sucessfully" , {data1: userCart.cart , data2 : newCartProducts}  )
     } catch (error) {
         console.log("error in removeCart controller : " ,error)
         return apiErrorResponce(res , "internal server error" , null , 500)
+    }
+}
+
+
+export const fetchCart = async(req , res)=>{
+    try {
+
+        const user = req.body.user
+
+        const cart = await User.findOne(user?._id)
+            .populate({ path: ["cart.product_id"],
+                populate: {path: 'product_brand product_inventory_id' , select: "Brand_name product_stock.batch_no product_stock.manufacture_date product_stock.expire_date product_stock.stock product_stock.size product_stock.mrp product_stock.price"},
+                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "hidden", "deleted", "out_of_stock"  ], 
+                strictPopulate: false })
+            .select("cart")
+
+        return apiSucessResponce(res , "Fetched successfully" , cart )
+
+    } catch (error) {
+        console.log("fetchCart controller error :", error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}
+
+
+export const alterProductCart = async(req , res)=>{
+    try {
+        const usr = req.body.user
+        const data = req.body.data
+        if(!data){return apiErrorResponce(res, "Invalid Crdentials")}
+
+        const {product_barcode , quantity} = data
+        if(!product_barcode){return apiErrorResponce(res , "Invalid Credentials")}
+
+        const product_details = await Product.findOne({product_barcode, deleted: false, hidden: false, out_of_stock: false})
+        if(!product_details){return apiErrorResponce(res , "Product Currently Unavailable")}
+
+        if (!usr.cart?.length){return apiErrorResponce(res , "Product Not Found" , null , 400)}
+
+        const cartProducts = usr.cart
+
+        let changeProducts = true
+        const newCartProducts =  cartProducts.map(product =>{
+            if(product.product_id.toString() == product_details._id.toString()){
+                changeProducts = false
+                return {product_id : product.product_id , quantity : quantity ? quantity : product.quantity }
+            } 
+            else {return {product_id : product.product_id , quantity : product.quantity}}
+        })
+        if(changeProducts){ newCartProducts.push({product_id: product_details._id, quantity: quantity ? quantity : 1 })}
+
+        const userCart = await User.findOneAndUpdate({_id : usr._id},{cart: newCartProducts} , {returnDocument: 'after'})
+            .populate({ path: ["cart.product_id"],
+                populate: {path: 'product_brand product_inventory_id' , select: "Brand_name product_stock.stock product_stock.size product_stock.mrp product_stock.price"},
+                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "hidden", "deleted", "out_of_stock"  ], 
+                strictPopulate: false })
+            .select("cart")
+
+        return apiSucessResponce(res , "Added successfully" ,  {data1: userCart.cart , data2 : newCartProducts} )
+
+    } catch (error) {
+        console.log("addCart controller error :", error)
+        return apiErrorResponce(res , "Internal Server Error" , null , 500)
     }
 }

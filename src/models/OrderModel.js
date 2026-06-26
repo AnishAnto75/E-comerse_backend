@@ -8,6 +8,7 @@ const orderSchema = mongoose.Schema({
     delivery_charges : { type : Number, required : true },
     total_amount : {type : Number, required : true},
     payment_method : {type : String, enum : ["Cash On Delivery" , "UPI"], required : true},
+    total_no_of_product : {type : Number , required : true},
     delivery_address :{
         name : { type : String, required : true },
         phoneNo : {type : Number, required : true},
@@ -18,8 +19,19 @@ const orderSchema = mongoose.Schema({
         city :{type : String, required : true},
         district : {type : String, required : true},
         state : {type : String, required : true},
-        addressType : {type : String, enum : ['home' , 'office'],}
+        addressType : {type : String, enum : ['home' , 'office'], required : true}
     },
+    product_details :[{
+        product_id: {type : mongoose.SchemaTypes.ObjectId, required : true},
+        product_barcode: {type : String, required : true},
+        product_batch_no: {type : String, default: null },
+        product_name: {type : String, required : true } ,
+        product_mrp: {type : Number, required : true },
+        product_price: { type : Number, required : true },
+        product_manufacture_date: { type : Date, default: null },
+        product_expire_date: { type : Date, default: null },
+        no_of_product: {type: Number, required : true },
+    }],
     order_status: {
         placed:{
             status: {type : Boolean, default : true},
@@ -49,18 +61,6 @@ const orderSchema = mongoose.Schema({
             reason_for_cancel: {type: String}
         }
     },
-    product_details :[{
-        product_id: {type : String, required : true},
-        product_barcode: {type : String, required : true},
-        product_batch_no: {type : String, required : true},
-        product_name: {type : String, required : true } ,
-        product_mrp: {type : Number, required : true },
-        product_price: { type : Number, required : true },
-        product_manufacture_date: { type : Date, required : true },
-        product_expire_date: { type : Date, required : true },
-        no_of_product: {type: Number, required : true },
-    }],
-    total_no_of_product : {type : Number , required : true} ,
     order_rating : { type : Number, enum : [1 , 2 , 3 , 4 , 5] },
     order_review:{ type : String }
 },{

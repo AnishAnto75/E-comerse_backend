@@ -3,6 +3,7 @@ import Staff from "../models/StaffModel.js"
 import bcrypt from 'bcrypt'
 import generatingAuthToken from "../utils/GeneratingAuthToken.js"
 import { apiErrorResponce, apiSucessResponce } from "../utils/apiResponce.js"
+import { generateRandom12DigitNumber } from "../utils/generateRandomNumber.js"
 
 export const signUp = async(req , res) =>{
     try {
@@ -15,18 +16,19 @@ export const signUp = async(req , res) =>{
         const validGender = ['male', 'female', 'other']
         if(!validGender.includes(gender)){return apiErrorResponce(res, "Invalid Credentials")}
 
-        const existingUser = await User.findOne({email})        
+        const existingUser = await User.findOne({email})  
         if (existingUser){ return apiErrorResponce(res, "User Already Loged in")}       
         
         const existingStaff = await Staff.findOne({staff_email: email})
         if (existingStaff){ return apiErrorResponce(res, "User Already Loged in")}       
-
+        
         const hashedPassword = await bcrypt.hash(password , 10)
-
+        
         const user_id = `USR${generateRandom12DigitNumber()}`
-
+        
         const newUser = new User({ user_id, email , password : hashedPassword , name, gender})
         await newUser.save()
+        console.log(1)      
 
         return apiSucessResponce(res , "Signed Up Successfully", newUser, 201)
 

@@ -19,7 +19,7 @@ const renewToken = async (req, res , next) => {
                 return apiErrorResponce(res, "Invalid Refresh Token")
             }
             const selectedValues = ['_id', "user_type", "email", "name", "order_id", "blocked", "address", 'cart']
-            const user = await User.findOne({email: decoded.email, deleted: false}).populate([{ path: ["cart.product_id"], strictPopulate: false }]).select(selectedValues)
+            const user = await User.findOne({email: decoded.email, deleted: false})
             if(!user){ 
                 res.clearCookie('refreshToken')
                 res.clearCookie('accessToken')
@@ -28,36 +28,7 @@ const renewToken = async (req, res , next) => {
             const accessToken = jwt.sign({email : user.email}, ACCESS_TOKEN_SECRET_KEY , {expiresIn: accessTokenExpirationTime} )
             res.cookie('accessToken', accessToken, {maxAge: 600000})
 
-            const cart = user.cart?.map(product => ({
-                product_id : {
-                    _id :  product.product_id._id,
-                    product_brand:  product.product_id.product_brand,
-                    product_barcode:  product.product_id.product_barcode,
-                    product_name:  product.product_id.product_name,
-                    product_total_stock:  product.product_id.product_total_stock ,
-                    product_offer:  product.product_id.product_offer ,
-                    product_net_unit:  product.product_id.product_net_unit ,
-                    product_out_of_stock:  product.product_id.product_out_of_stock ,
-                    product_min_order_quantity:  product.product_id.product_min_order_quantity ,
-                    product_max_order_quantity:  product.product_id.product_max_order_quantity ,
-                    product_photos:  product.product_id.product_photos ,
-                    product_varient:  product.product_id.product_varient ,
-                    product_stock: {
-                        stock: product.product_id.product_stock[0].stock ,
-                        quantity: product.product_id.product_stock[0].quantity,
-                        mrp: product.product_id.product_stock[0].mrp,
-                        batch_no: product.product_id.product_stock[0].batch_no,
-                        price: product.product_id.product_stock[0].price ,
-                        manufacture_date: product.product_id.product_stock[0].manufacture_date ,
-                        expire_date: product.product_id.product_stock[0].expire_date ,
-                    } ,
-                    hidden:  product.product_id.hidden ,
-                    deleted:  product.product_id.deleted ,
-                },
-                quantity: product.quantity
-            }))
-
-            user._doc.cart = cart
+            user._doc.cart = user.cart
             req.body.user = user
             next()            
         })
@@ -79,42 +50,14 @@ const verifyUser = async(req, res, next) => {
         if(!token) { return apiErrorResponce(res, "Invalid Token")}
 
         const selectedValues = ['_id', "user_type", "email", "name", "order_id", "blocked", "address", 'cart']
-        let user = await User.findOne({email: token.email, deleted: false}).populate([{ path: ["cart.product_id"], strictPopulate: false }]).select(selectedValues)
+        let user = await User.findOne({email: token.email, deleted: false})
         if(!user){ 
             res.clearCookie('refreshToken')
             res.clearCookie('accessToken')
             return res.status(400).send({message : "No User Found"})
         } 
-        const cart = user.cart?.map(product => ({
-            product_id : {
-                _id :  product.product_id._id,
-                product_brand:  product.product_id.product_brand,
-                product_barcode:  product.product_id.product_barcode,
-                product_name:  product.product_id.product_name,
-                product_total_stock:  product.product_id.product_total_stock ,
-                product_offer:  product.product_id.product_offer ,
-                product_net_unit:  product.product_id.product_net_unit ,
-                product_out_of_stock:  product.product_id.product_out_of_stock ,
-                product_min_order_quantity:  product.product_id.product_min_order_quantity ,
-                product_max_order_quantity:  product.product_id.product_max_order_quantity ,
-                product_photos:  product.product_id.product_photos ,
-                product_varient:  product.product_id.product_varient ,
-                product_stock: {
-                    stock: product.product_id.product_stock[0].stock ,
-                    quantity: product.product_id.product_stock[0].quantity,
-                    mrp: product.product_id.product_stock[0].mrp,
-                    batch_no: product.product_id.product_stock[0].batch_no,
-                    price: product.product_id.product_stock[0].price ,
-                    manufacture_date: product.product_id.product_stock[0].manufacture_date ,
-                    expire_date: product.product_id.product_stock[0].expire_date ,
-                },
-                hidden:  product.product_id.hidden,
-                deleted:  product.product_id.deleted ,
-            },
-            quantity: product.quantity
-        }))
 
-        user._doc.cart = cart
+        user._doc.cart = user.cart
         req.body.user = user
         next()
 

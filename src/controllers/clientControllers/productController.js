@@ -4,26 +4,28 @@ import {validateMongooseId} from "../../utils/validateTypes.js"
 
 export const fetchAllProduct = async(req , res)=>{
     try {
-        const selectedValues = [
-            "product_brand", 
-            "product_barcode", 
-            "product_name",
-            "product_stock.stock", 
-            "product_stock.quantity", 
-            "product_stock.mrp", 
-            "product_stock.price", 
-            "product_total_stock", 
-            "product_photos"
-        ]
+        const products = await Product.find({deleted : false, hidden: false, out_of_stock: false, })
+            .select(["product_brand", "product_barcode", "product_name", "product_photos", "product_inventory_id"])
+            .populate({ path: ["product_brand"], select:["Brand_name"], strictPopulate: false })
+            .populate({ path: ["product_inventory_id"], select:["product_total_stock", "product_stock" ], strictPopulate: false })
+            .sort({product_name : 1 }).
+            limit(50)
 
-        const products = await Product.find({
-            product_stock: {$exists: true, $ne: [], $not: { $size: 0 }}, 
-            deleted : false, 
-            hidden: false, 
-            product_out_of_stock: false, 
-            product_total_stock: {$exists: true, $ne: 0, }
-        }).select(selectedValues)
-        apiSucessResponce(res , "Products found successfully" , products )
+        const data = [] 
+        products.map(product=>{
+            if(product.product_inventory_id?.product_total_stock){
+                const stock = product.product_inventory_id.product_stock[0]
+                product.product_inventory_id.product_stock = {
+                    stock: stock.stock,
+                    size: stock.size,
+                    mrp: stock.mrp,
+                    price: stock.price
+                }
+                data.push(product)
+            }
+        })
+
+        apiSucessResponce(res , "Products found successfully" , data )
     } catch (error) {
         console.log("Error in fetchAllProducts controller",error)
         apiErrorResponce(res , "internal server error" , error)
