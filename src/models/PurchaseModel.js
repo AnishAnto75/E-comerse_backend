@@ -16,6 +16,7 @@ const purchaseSchema = mongoose.Schema({
         gst : { type : Number, required: true },
         other_expences : { type : Number, required: true },
         price: { type : Number, required: true },
+        total_purchase_cost: { type : Number, required: true },
     }],
     total_purchase_amount :  { type : Number, required: true },
     added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "User", required : true }

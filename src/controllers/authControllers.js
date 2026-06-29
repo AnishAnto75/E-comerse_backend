@@ -41,14 +41,13 @@ export const signUp = async(req , res) =>{
 export const login = async(req , res) =>{
     try {
         const data = req.body.data
-        if(!data){return apiErrorResponce(res, "Invalid Credentials")}
-
+        if(!data){return apiErrorResponce(res, "Invalid Credentials")}        
         const { email , password } = data
         if (!email || !password ){return apiErrorResponce(res, "Invalid Credentials")}
-
+        
         const user = await User.findOne({email})
         if(!user){return apiErrorResponce(res, "Invalid Credentials")}
-
+        
         const comparedPassword = await bcrypt.compare(password , user.password)
         if(!comparedPassword){return apiErrorResponce(res, "Invalid Credentials")}
 

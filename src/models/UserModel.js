@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 
-const addressSchema = mongoose.Schema({
+const addressSchema = new mongoose.Schema({
     name : { type : String, required : true },
     phoneNo : { type : Number, required : true},
     alternatePhoneNo : { type : Number, default: null},
-    pincode : { type : Number, required : true },
+    pincode : { type : String, required : true },
     houseNo : {type : String, default: null},
     landMark :{type : String, default: null},
     city :{type : String, required : true},
@@ -13,34 +13,44 @@ const addressSchema = mongoose.Schema({
     addressType : { type : String, enum : ['home' , 'work'], default: 'home'}
 })
 
-const cartSchema = mongoose.Schema({
+const cartSchema = new mongoose.Schema({
     product_id : { type : mongoose.SchemaTypes.ObjectId, ref: 'Product', required: true},
-    quantity : { type : Number, required: true, min: [1, "Quantity can't be negative"]
-    }
-})
+    // quantity : { type : Number, required: true, min: [1, "Quantity can't be negative"]}
+    quantity: {type: Number, required: true, min: [1, "Quantity can't be negative"], validate: Number.isInteger}
+},{ _id: false })
 
-const userSchema = mongoose.Schema({
-    user_id :{ type: String, unique: true, required: true},
+const userSchema = new mongoose.Schema({
+    user_id :{ type: String, immutable: true, unique: true, required: true},
     user_type :{ type: String, enum: ['user', 'admin'], default: 'user'},
-    email : { type: String, immutable: true, unique: true, required: true },
+    email : { type: String, immutable: true, unique: true, required: true, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, "Invalid email"]},
     password : {type: String, required: true},
-    name : {type: String, required: true },
+    name: {type: String, required: true, trim: true, minlength: 2, maxlength: 50},
     gender : {type: String, enum: ['male', 'female', 'other'], required: true },
     DOB : {type: Date, default: null },
-    phoneNumber :{type: Number, default: null},
-    address :  [addressSchema],
-    cart : [cartSchema],
+    phoneNumber :{type: String, default: null},
+    // address :  [addressSchema],
+    address: {
+        type: [addressSchema],
+        default: []
+    },
+    // cart : [cartSchema],
+    cart: {
+        type: [cartSchema],
+        default: []
+    },
     notificationPreferences: {
         email: { type: Boolean, default: true},
-        whats_app: { type: Boolean, default: true},
+        whatsapp: { type: Boolean, default: true},
         sms: { type: Boolean, default: true},
         push: { type: Boolean, default: true}
     },
-    order_id : [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order', required: true}],
+    order_id : [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order'}],
     blocked : { type: Boolean, default: false},
     deleted : {type: Boolean, default: false},
+    deletedAt: { type: Date, default: null }
 },{
     timestamps : true,
+    versionKey: false
 })
 
 const User = mongoose.model("User" , userSchema)
