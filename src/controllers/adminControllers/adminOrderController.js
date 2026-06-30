@@ -19,6 +19,9 @@ export const fetchAdminOrder = async(req , res)=>{
         .populate({ path: ["user_id"], select:["email", "name", "user_id", "phoneNumber"], strictPopulate: false })
         .populate({ path: ["product_details.product_id"], model: "Product", select:['product_photos', "_id"], strictPopulate: false })
 
+        if(!order){
+            throw new Error("Internal Server Error")
+        }
         apiSucessResponce(res , "Order Fetched Sucessfully" , order)
     } catch (error) {
         console.log("error in fetchAdminOrder controller : " ,error)
