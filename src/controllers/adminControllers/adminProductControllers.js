@@ -84,7 +84,7 @@ export const CreateProduct = async(req , res)=>{
 export const adminFetchAllProduct = async(req,res)=>{
     try {
         const products = await Product.find({deleted : false})
-        .select(["product_brand", "product_barcode", "product_name", "product_photos", "hidden", "product_inventory_id"])
+        .select(["product_brand", "product_barcode", "product_name", "product_photos", "status", "product_inventory_id"])
         .populate({ path: ["product_brand"], strictPopulate: false })
         .populate({ path: ["product_inventory_id"], strictPopulate: false })
         .populate({ path: ["product_review_id"], strictPopulate: false })
@@ -102,7 +102,7 @@ export const adminFetchAllProduct = async(req,res)=>{
 export const adminFetchForProductPage = async(req, res)=>{
     try {
         const products = await Product.find({deleted : false})
-        .select(["product_brand", "product_barcode", "product_name", "product_photos", "hidden", "product_inventory_id"])
+        .select(["product_brand", "product_barcode", "product_name", "product_photos", "status", "product_inventory_id"])
         .populate({ path: ["product_brand"], select:["Brand_name"], strictPopulate: false })
         .populate({ path: ["product_inventory_id"], select:["product_total_stock"], strictPopulate: false })
         .populate({ path: ["product_review_id"], select:["product_average_ratings"], strictPopulate: false })
@@ -129,6 +129,8 @@ export const adminFetchProduct = async(req,res)=>{
         const product = await Product.findOne({product_barcode : id})
         .populate({ path: ["product_brand"], strictPopulate: false })
         .populate({ path: ["product_inventory_id"], strictPopulate: false })
+        .populate({ path: ["product_category"], strictPopulate: false })
+        .populate({ path: ["product_group"], strictPopulate: false })
         .populate({ path: ["product_review_id"], strictPopulate: false })
 
         if(!product){
@@ -150,7 +152,7 @@ export const adminSearchProducts = async(req,res)=>{
         }
         const products = await Product.find({product_name : {$regex: name, $options: 'i'}, deleted: false})
         .populate({ path: ["product_category"], select:["category_name"], strictPopulate: false })
-        .select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_photos", "product_total_unit_sold", "product_category", "hidden" ]).limit(15)
+        .select(["product_brand", "product_barcode", "product_name", "product_total_stock", "product_photos", "product_total_unit_sold", "product_category", "status" ]).limit(15)
 
         return apiSucessResponce(res, "All Products Fetched SucessFully", products)
         

@@ -27,7 +27,7 @@ const productSchema = mongoose.Schema({
         answer : {type: String, required: true }
     }],
     out_of_stock : { type: Boolean, default: false },
-    hidden : {type: Boolean, default: false},
+    status: { type: String, enum : ['active', 'inactive'], default: "active" },
     deleted : {type: Boolean, default: false},
 },{ timestamps : true }
 )

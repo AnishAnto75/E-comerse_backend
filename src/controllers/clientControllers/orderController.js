@@ -27,7 +27,7 @@ export const createOrder = async(req , res)=>{
     
         // validating duplicate barcode and Existing Product 
         const product_barcodes = product_details?.map((product)=> product.product_barcode)
-        let products = await Product.find({product_barcode : product_barcodes , deleted: false, hidden: false, out_of_stock: false})
+        let products = await Product.find({product_barcode : product_barcodes , deleted: false, status: "active", out_of_stock: false})
             .populate({ path: ["product_inventory_id"], strictPopulate: false })
             .session(session)
 
@@ -118,7 +118,7 @@ export const createOrder = async(req , res)=>{
 
 //         // validating duplicate barcode and Existing Product 
 //         const product_barcodes = product_details?.map((product)=> product.product_barcode)
-//         let products = await Product.find({product_barcode : product_barcodes , deleted: false, hidden: false, out_of_stock: false})
+//         let products = await Product.find({product_barcode : product_barcodes , deleted: false, status: "active", out_of_stock: false})
 //         .populate({ path: ["product_inventory_id"], strictPopulate: false })
 //         .session(session)
 

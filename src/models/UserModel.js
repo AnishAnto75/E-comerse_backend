@@ -15,7 +15,6 @@ const addressSchema = new mongoose.Schema({
 
 const cartSchema = new mongoose.Schema({
     product_id : { type : mongoose.SchemaTypes.ObjectId, ref: 'Product', required: true},
-    // quantity : { type : Number, required: true, min: [1, "Quantity can't be negative"]}
     quantity: {type: Number, required: true, min: [1, "Quantity can't be negative"], validate: Number.isInteger}
 },{ _id: false })
 
@@ -28,12 +27,10 @@ const userSchema = new mongoose.Schema({
     gender : {type: String, enum: ['male', 'female', 'other'], required: true },
     DOB : {type: Date, default: null },
     phoneNumber :{type: String, default: null},
-    // address :  [addressSchema],
     address: {
         type: [addressSchema],
         default: []
     },
-    // cart : [cartSchema],
     cart: {
         type: [cartSchema],
         default: []
@@ -45,7 +42,9 @@ const userSchema = new mongoose.Schema({
         push: { type: Boolean, default: true}
     },
     order_id : [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order'}],
-    blocked : { type: Boolean, default: false},
+    status: { type: String, enum : ['active', 'inactive', 'blocked'], default: "active" },
+    blocked_reason :{type: String, default: null},
+    ratings : { type : Number, enum : [1 , 2 , 3 , 4 , 5], default: 1 },
     deleted : {type: Boolean, default: false},
     deletedAt: { type: Date, default: null }
 },{
