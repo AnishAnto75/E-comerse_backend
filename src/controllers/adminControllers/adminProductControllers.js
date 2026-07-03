@@ -80,7 +80,6 @@ export const CreateProduct = async(req , res)=>{
     }
 }
 
-
 export const adminFetchAllProduct = async(req,res)=>{
     try {
         const products = await Product.find({deleted : false})

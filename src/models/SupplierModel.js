@@ -22,7 +22,7 @@ const supplierSchema = mongoose.Schema({
         branch_name : {type: String, default: null},
         IFSC : {type: String, default: null},
     },
-    active_status : {type: Boolean, default: true}
+    status: { type: String, enum : ['active', 'inactive'], default: "active" },
 },{timestamps:true})
 
 const Supplier = mongoose.model ("Supplier", supplierSchema)

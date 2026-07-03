@@ -57,7 +57,7 @@ router.get('/product/category/:id' , verifyUser, verifingAdmin, adminFetchProduc
 //Supplier
 router.post('/supplier/create-supplier' , verifyUser, verifingAdmin, adminCreateSupplier)
 router.get('/supplier/all-supplier' , verifyUser, verifingAdmin, adminFetchAllSuppliers)
-router.get('/supplier/:id' , verifyUser, verifingAdmin, adminFetchSupplier)
+router.get('/supplier/supplier_id/:id' , verifyUser, verifingAdmin, adminFetchSupplier)
 
 
 //Purchase
