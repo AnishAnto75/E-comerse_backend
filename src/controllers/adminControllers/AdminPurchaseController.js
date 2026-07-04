@@ -99,7 +99,7 @@ export const adminCreatePurchase = async(req, res)=>{
 export const adminFetchAllPurchases = async(req,res)=>{
     try {
         const purchaseBooks = await Purchase.find()
-        .populate([{ path: 'supplier_id', strictPopulate: false }]);
+        .populate([{ path: 'supplier_id', strictPopulate: false }])
         return apiSucessResponce(res, "Purchase Books Fetched Sucessfully", purchaseBooks)
     } catch (error) {
         console.log("error in fetchAllPurchases controller" , error)

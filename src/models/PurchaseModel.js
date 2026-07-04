@@ -19,7 +19,8 @@ const purchaseSchema = mongoose.Schema({
         total_purchase_cost: { type : Number, required: true },
     }],
     total_purchase_amount :  { type : Number, required: true },
-    added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "User", required : true }
+    added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff", required : true }
+
 },{timestamps: true})
 
 const Purchase = mongoose.model ("Purchase", purchaseSchema)
