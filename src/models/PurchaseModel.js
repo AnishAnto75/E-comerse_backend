@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 const purchaseSchema = mongoose.Schema({
     supplier_id : { type : mongoose.SchemaTypes.ObjectId, ref : "Supplier", required : true },
     invoice_no : {type: String, required: true },
+    invoice_date: {type: Date, required: true },
+    delivery_date: {type: Date, required: true },
     products : [{
         product_barcode: { type : String, required : true },
         batch_no: { type: String, default: null },
@@ -18,9 +20,10 @@ const purchaseSchema = mongoose.Schema({
         price: { type : Number, required: true },
         total_purchase_cost: { type : Number, required: true },
     }],
-    total_purchase_amount :  { type : Number, required: true },
+    sub_total_amount :  { type : Number, required: true },                  // with GST
+    discount_received :  { type : Number, required: true },
+    total_amount :  { type : Number, required: true },                      // final amount paid
     added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff", required : true }
-
 },{timestamps: true})
 
 const Purchase = mongoose.model ("Purchase", purchaseSchema)

@@ -22,6 +22,7 @@ app.use(cors({
     credentials: true
 })) 
 app.use(cookieParser())
+app.use("/uploads", express.static("uploads"));
 
 mongoose.connect(MONGODB_URL).then(()=>console.log('Connected to database'))
 

@@ -3,20 +3,27 @@ import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 
 export const createProductGroup = async(req, res)=>{
     try {
-        const {group_name, group_description, group_image } = req.body?.data
-        if(!group_name) { return apiErrorResponce(res , "Invalid Credentials")}
+        const {group_name, group_description} = req.body
+        if( !group_name?.trim()) { return apiErrorResponce(res , "Group name is required")}
+        if (!req.file) {return apiErrorResponce(res, "Group image is required");}
 
-        const group = await ProductGroup.findOne({group_name})
+        console.log(req.body)
+        console.log(req.file)
+
+        const group = await ProductGroup.findOne({
+            group_name: {$regex: new RegExp(`^${group_name.trim()}$`, "i"),},
+        });
         if(group){return apiErrorResponce(res, "Group Name Is Already Added")}
 
-        const formatedData = {
-            group_name,
+        const formattedData = {
+            group_name: group_name.trim(),
             group_description,
-            group_image
+            group_image:{
+                url : `/uploads/groups/${req.file.filename}`
+            }
         }
 
-        const newGroup = new ProductGroup(formatedData)
-        await newGroup.save()
+        const newGroup = await ProductGroup.create(formattedData);
 
         return apiSucessResponce(res , "Group Created Sucessfully", newGroup, 201)
     } catch (error) {

@@ -2,28 +2,45 @@ import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import ProductBrand from "../../models/ProductBrandModel.js"
 import { validateMongooseId } from "../../utils/validateTypes.js"
 
+
 export const createProductBrand = async(req, res)=>{
     try {
-        const{Brand_name, Brand_description, Brand_logo} = req.body?.data
+        const{brand_name, brand_description } = req.body
+        
+        if (!brand_name?.trim()) { return apiErrorResponce(res, "Brand name is required")}
+        if (!req.file) {return apiErrorResponce(res, "Brand logo is required")}
 
-        const validateBrand = await ProductBrand.findOne({Brand_name})
+        const validateBrand = await ProductBrand.findOne({brand_name: { $regex: new RegExp(`^${brand_name.trim()}$`, "i"),}, deleted: false })
         if(validateBrand){ return apiErrorResponce(res, "Brand Already Exist", null, 400)}
 
-        const formatedData = {
-            Brand_name,
-            Brand_description,
-            Brand_logo
+        const formattedData = {
+            brand_name : brand_name.trim(),
+            brand_description,
+            brand_logo:{
+                url : `/uploads/brands/${req.file.filename}`,
+                public_id: "",
+            }
         }
 
-        const newBrand = new ProductBrand(formatedData)
-        await newBrand.save()
+        const newBrand = await ProductBrand.create(formattedData)
 
         return apiSucessResponce(res , "Brand Created Successfully", newBrand, 201)
     } catch (error) {
+        if (error.code === 11000) {return apiErrorResponce(res, "Brand already exists", null, 400)}
         console.log("error in createProductBrand :" , error)
         return apiErrorResponce(res, "internal server error", null, 500 )
     }
 }
+
+
+
+
+
+
+
+
+
+// old
 
 export const adminEditBrand = async(req,res)=>{
     try {
