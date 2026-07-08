@@ -29,7 +29,7 @@ const renewToken = async (req, res , next) => {
             res.cookie('accessToken', accessToken, {maxAge: 600000})
 
             user._doc.cart = user.cart
-            req.body.user = user
+            req.user = user
             next()            
         })
     } catch (error) {
@@ -58,7 +58,7 @@ const verifyUser = async(req, res, next) => {
         } 
 
         user._doc.cart = user.cart
-        req.body.user = user
+        req.user = user
         next()
 
     } catch (error) {

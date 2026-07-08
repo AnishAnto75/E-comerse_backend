@@ -1,6 +1,6 @@
 const verifingAdmin = async(req , res , next) =>{
     try {
-        const user = req.body.user
+        const user = req.user
         if(!user){
             return res.status(400).json({message : "user not found"})
         }

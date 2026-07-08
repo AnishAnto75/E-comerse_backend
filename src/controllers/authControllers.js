@@ -62,7 +62,7 @@ export const login = async(req , res) =>{
 
 export const getUser = (req , res) =>{
     try {
-        const data = req.body.user
+        const data = req.user
         if(!data){return apiErrorResponce(res, "Invalid Credentials")}
 
         return apiSucessResponce(res, "fetched", data)

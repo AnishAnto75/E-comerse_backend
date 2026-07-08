@@ -46,46 +46,59 @@ export const adminFetchCategoriesForCreateProductPage = async(req, res)=>{
 }
 
 export const createProduct = async(req , res)=>{
-    const user = req.body.user
+    const session = await mongoose.startSession();
 
+    const {product_group, product_category, product_brand, product_barcode, product_name, product_UOM, product_net_unit, product_min_order_quantity, product_max_order_quantity, product_hsn_code, product_description, product_highlights} = req.body
+    const user = req.user
+    
     try {
-        const {product_group, product_category, product_brand, product_barcode, product_name, product_UOM, product_net_unit, product_min_order_quantity, product_max_order_quantity, product_low_in_stock, product_hsn_code, product_description, product_highlights} = req.body
 
-        const product_photo = req.files.product_photo?.[0];
-        const additionalPhotos = req.files.product_additional_photos || [];
+        const product_photo = req.files?.product_photo?.[0];
+        const additionalPhotos = req.files?.product_additional_photos || [];
+
+        // validation
         if(!product_group || !product_category || !product_brand || !product_barcode || !product_name || !product_UOM || !product_photo){ return apiErrorResponce(res , "Missing some required fields")}
-
-        if ( !validateMongooseId(product_group) || !validateMongooseId(product_category) || !validateMongooseId(product_brand) ) {
-            return apiErrorResponce(res, "Invalid ID");
-        }
-
-        const validateGroup = await ProductGroup.findOne({_id: product_group, deleted: false})
-        if(!validateGroup) { return apiErrorResponce(res , "Invalid Group ID") }
-
-        const validateCategory = await ProductCategory.findOne({ group_id : product_group , _id: product_category, deleted: false });
-        if (!validateCategory) {return apiErrorResponce(res, "Invalid Category")}
-
-        const validateBrand = await ProductBrand.findOne({_id : product_brand, deleted: false})
-        if(!validateBrand) { return apiErrorResponce(res , "Invalid Brand ID") }
-
-        const validateProduct = await Product.findOne({product_barcode : product_barcode.trim(), deleted: false})
-        if(validateProduct){return apiErrorResponce(res , "Duplicate Product")}
-
+        if ( !validateMongooseId(product_group) || !validateMongooseId(product_category) || !validateMongooseId(product_brand) ) { return apiErrorResponce(res, "Invalid ID");}
         let highlights = [];
-
-        try {highlights = product_highlights ? JSON.parse(product_highlights): []} 
+        try {highlights = product_highlights ? JSON.parse(product_highlights): []}
         catch {return apiErrorResponce(res, "Invalid product highlights");}
+        
+        
+        // Database validation
+
+        session.startTransaction();
+
+        const validateGroup = await ProductGroup.findOne({_id: product_group, deleted: false}).session(session);
+        if(!validateGroup) { 
+            await session.abortTransaction();
+            return apiErrorResponce(res , "Invalid Group ID") 
+        }
+        const validateCategory = await ProductCategory.findOne({ group_id : product_group , _id: product_category, deleted: false }).session(session);
+        if (!validateCategory) {
+            await session.abortTransaction();
+            return apiErrorResponce(res, "Invalid Category")
+        }
+        const validateBrand = await ProductBrand.findOne({_id : product_brand, deleted: false}).session(session);
+        if(!validateBrand) { 
+            await session.abortTransaction();
+            return apiErrorResponce(res , "Invalid Brand ID") 
+        }
+        const validateProduct = await Product.findOne({product_barcode : product_barcode.trim(), deleted: false}).session(session);
+        if(validateProduct){
+            await session.abortTransaction();
+            return apiErrorResponce(res , "Duplicate Product")
+        }
 
         const formattedData = {
             product_group,
             product_category, 
             product_brand, 
-            product_barcode : product_barcode.trim(), 
+            product_barcode : product_barcode.trim().toUpperCase(), 
             product_name : product_name.trim(),
             product_UOM ,
-            product_net_unit, 
-            product_min_order_quantity, 
-            product_max_order_quantity, 
+            product_net_unit : Number(product_net_unit), 
+            product_min_order_quantity : Number(product_min_order_quantity) , 
+            product_max_order_quantity : Number(product_max_order_quantity) , 
             product_photo : {
                 url : `/uploads/products/${product_photo.filename}`,
                 public_id: ""
@@ -100,16 +113,32 @@ export const createProduct = async(req , res)=>{
             product_added_by : user._id ,
         }
 
-        const product = await Product.create(formattedData)
+        const product = await Product.create([formattedData], { session })
 
-        return apiSucessResponce(res, "Product Created Successfully", product )
+        await RecentActivity.create([{
+            user_id: req.user._id,
+            activity_type: "product",
+            action: "created",
+            title: "Product Added",
+            description: `Product "${product[0].product_name}" has been created successfully.`,
+            reference_id: product[0]._id,
+            reference_model: "Product",
+            metadata: {
+                product_id: product[0]._id,
+                product_name: product[0].product_name,
+                added_by: user.name
+            }
+        }], { session });
+
+        await session.commitTransaction();
+        return apiSucessResponce(res, "Product Created Successfully", product[0] )
+
     } catch (error) {
+        await session.abortTransaction();
         console.log("error in CreateProduct controller ",error)
         return apiErrorResponce(res , "internal Server Error")
-    }
+    } finally { session.endSession() }
 }
-
-
 
 
 

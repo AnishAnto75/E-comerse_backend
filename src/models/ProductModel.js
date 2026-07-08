@@ -6,7 +6,6 @@ const productSchema = mongoose.Schema({
     product_brand: { type : mongoose.SchemaTypes.ObjectId, ref : "ProductBrand", required : true },
     product_barcode: { type : String, required : true },
     product_name: { type : String, required : true, trim: true },
-    product_inventory_id: { type : mongoose.SchemaTypes.ObjectId, ref : "ProductInventory" },
     product_UOM: { type: String, enum : ['gm','kg','ml','lit','pcs','cap'], required: true },
     product_net_unit: {type: Number, default: 1 },
     product_min_order_quantity : { type: Number, default: 1 },
@@ -41,7 +40,7 @@ const productSchema = mongoose.Schema({
         default: []
     },
     out_of_stock : { type: Boolean, default: false },
-    status: { type: String, enum : ['active', 'inactive'], default: "inactive" },
+    status: { type: String, enum : ['active', 'inactive'], default: "active" },
     deleted : {type: Boolean, default: false},
 },{ timestamps : true }
 )
