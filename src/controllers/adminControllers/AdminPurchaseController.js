@@ -36,14 +36,14 @@ export const adminCreatePurchase = async(req, res)=>{
         if(dbProducts.length !== ids.length){ await session.abortTransaction();  return apiErrorResponce(res, "One or more products are invalid" );}
 
         const productMap = new Map();
-        dbProducts.forEach(product=>{ productMap.set(product._id.toString(),product);});
-
+        dbProducts.forEach(product=>{ productMap.set(product._id.toString(), product);});
 
         // formatting product data and calculating sub_total and gst_amount for purchase
         let formattedProducts = [];
         let subTotal = 0;
         let gstAmount = 0;
         const round = (value)=>Number(value.toFixed(2));
+        
         for(const item of products){
             const product = productMap.get(item.product_id.toString());
             const quantity = Number(item.quantity_received);
@@ -73,7 +73,7 @@ export const adminCreatePurchase = async(req, res)=>{
             subTotal += lineTotal;
 
             formattedProducts.push({
-                product_id:product._id,
+                product_id: product._id,
                 batch_no:item.batch_no?.trim() || "",
                 free_received: freeReceived,
                 quantity_received: quantity,
@@ -128,18 +128,20 @@ export const adminCreatePurchase = async(req, res)=>{
 
         const purchase = await Purchase.create( [purchaseData] , { session });
 
-        // Inventory update
+        // Inventory and Product update 
         for(const item of formattedProducts){
             const product = productMap.get(item.product_id.toString());
             const totalStock = item.quantity_received + item.free_received;
             const inventory = await ProductInventory.findOne({ product_id:item.product_id}).session(session);
 
-            // create inventory
+            let updatedTotalStock = totalStock;
+
+            // create inventory if new product
             if(!inventory){
                 await ProductInventory.create([{
                     product_id:item.product_id,
                     product_barcode: product.product_barcode,
-                    product_total_stock:totalStock,
+                    product_total_stock: totalStock,
                     product_stock:[{
                         purchase_id:purchase[0]._id,
                         batch_no:item.batch_no,
@@ -159,6 +161,9 @@ export const adminCreatePurchase = async(req, res)=>{
             // update inventory
             else{
                 inventory.product_total_stock += totalStock;
+
+                updatedTotalStock = inventory.product_total_stock;
+
                 inventory.product_stock.push({
                     purchase_id:purchase[0]._id,
                     batch_no:item.batch_no,
@@ -175,13 +180,35 @@ export const adminCreatePurchase = async(req, res)=>{
                 });
                 await inventory.save({ session });
             }
+
+             // update latest batch in product
+            await Product.updateOne( { _id: item.product_id },
+                { $set: {
+                    current_stock: updatedTotalStock,
+                    out_of_stock: updatedTotalStock <= 0,
+                    latest_batch_details: {
+                        batch_no: item.batch_no,
+                        size: item.size,
+                        manufacture_date: item.manufacture_date || null,
+                        expiry_date: item.expiry_date || null,
+                        best_before: item.best_before || 0,
+                        mrp: item.mrp,
+                        purchase_cost: item.purchase_cost,
+                        gst_percentage: item.gst_percentage,
+                        other_expenses: item.other_expenses,
+                        selling_price: item.selling_price,
+                    }}
+                }, { session }
+            )
         }
 
+        // updating supplier
         supplier.total_purchase_amount = round(supplier.total_purchase_amount + grandTotal);
         supplier.total_orders += 1;
         supplier.last_purchase_date = delivery_date;
         await supplier.save({ session });
 
+        // recording transactions
         if(Number(paid_amount) > 0){
             await Transaction.create([{
                 type: "expense",
@@ -196,6 +223,7 @@ export const adminCreatePurchase = async(req, res)=>{
             }],{ session });
         }
 
+        // recording recentActivity
         await RecentActivity.create([{
             user_id: req.user._id,
             activity_type: "purchase",
@@ -215,8 +243,7 @@ export const adminCreatePurchase = async(req, res)=>{
         }], { session });
 
         await session.commitTransaction();
-
-        return apiSucessResponce( res, "Purchase created successfully", purchase[0]);
+        return apiSucessResponce( res, "Purchase entry created successfully", purchase[0]);
 
     } catch (error) {
         await session.abortTransaction();
@@ -226,6 +253,34 @@ export const adminCreatePurchase = async(req, res)=>{
     } finally { await session.endSession();}
 }
 
+export const adminSearchProductsForCreatePurchase = async (req, res) => {
+    try {
+        const { query } = req.query;
+        
+        const escapedQuery = query?.replace( /[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        if (!escapedQuery?.trim()) { return apiSucessResponce(res, "product fetched successfully", [] , 200)}
+        
+
+        // Search by name or barcode
+        const products = await Product.find({ 
+            deleted: false, 
+            $or: [ 
+                {product_name: {$regex: escapedQuery, $options: "i"}}, 
+                { product_barcode: { $regex: escapedQuery, $options: "i"}}, 
+                { search_keywords: { $regex: escapedQuery, $options: "i"}} 
+            ]
+        })
+        .select( "_id product_name product_barcode latest_batch_details current_stock product_photo")
+        .limit(10)
+        .lean();
+
+        return apiSucessResponce(res, "product fetched successfully", products, 200)
+    } catch (error) {
+        console.error(error);
+        return apiErrorResponce(res, "failed to search product")
+    }
+};
 
 
 

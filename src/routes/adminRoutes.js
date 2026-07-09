@@ -11,7 +11,7 @@ import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOr
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminFetchAllSuppliers, adminFetchSupplier, createSupplier } from "../controllers/adminControllers/adminSupplierController.js";
-import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook } from "../controllers/adminControllers/adminPurchaseController.js";
+import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminSearchProductsForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
 import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGroupsByNameForCreateBanner, adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners, fetchBanner, hideBanner } from "../controllers/adminControllers/adminBannerController.js";
 import { createProductBrand , fetchAllBrand, adminEditBrand, fetchBrand, adminSearchBrand} from "../controllers/adminControllers/adminProductBrandController";
 import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductImage } from "../middlewares/multer.js";
@@ -44,6 +44,7 @@ router.post('/supplier/create-supplier', verifyUser , verifingAdmin , createSupp
 
 // Purchase
 router.post('/purchase/create-purchase' , verifyUser, verifingAdmin, adminCreatePurchase)
+router.get('/purchase/create-purchase/search-products/' , verifyUser, verifingAdmin, adminSearchProductsForCreatePurchase)
 
 
 

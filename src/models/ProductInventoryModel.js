@@ -14,10 +14,12 @@ const productInventorySchema = mongoose.Schema({
         expiry_date: { type: Date, default: null },
         best_before: { type: Number, default: "" },
         mrp: { type : Number, required: true, min: 0 },
-        purchase_cost : { type : Number, required: true, min: 0 },
+        purchase_cost : { type : Number, required: true, min: 0 },                  // without gst
         gst_percentage : { type : Number, required: true, min: 0 },
         other_expenses : { type : Number, required: true, min: 0 },
         selling_price: { type : Number, required: true, min: 0 },
+    },{
+        timestamps: true
     }],
 },{ timestamps : true }
 )

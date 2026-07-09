@@ -39,6 +39,20 @@ const productSchema = mongoose.Schema({
         }],
         default: []
     },
+    current_stock: { type: Number, default: 0 },
+    latest_batch_details: {
+        batch_no : { type: String, default: "" },
+        size: {type: String, default: "" },
+        manufacture_date: { type: Date, default: null},
+        expiry_date: { type: Date, default: null },
+        best_before: { type: Number, default: 0 },
+        mrp: { type : Number, default: 0 },
+        purchase_cost : { type : Number, default: 0 },                  // without gst
+        gst_percentage : { type : Number, default: 0 },
+        other_expenses : { type : Number, default: 0 },
+        selling_price: { type : Number, default: 0 },
+    },
+    search_keywords: { type: [String], default: []},
     out_of_stock : { type: Boolean, default: false },
     status: { type: String, enum : ['active', 'inactive'], default: "active" },
     deleted : {type: Boolean, default: false},
