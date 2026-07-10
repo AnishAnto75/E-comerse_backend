@@ -57,6 +57,6 @@ recentActivitySchema.index({ createdAt: -1 });
 recentActivitySchema.index({ user_id: 1 });
 recentActivitySchema.index({ activity_type: 1 });
 
-const RecentActivity =  mongoose.model("RecentActivity", recentActivitySchema);
+const RecentActivity = mongoose.model("RecentActivity", recentActivitySchema);
 
 export default RecentActivity

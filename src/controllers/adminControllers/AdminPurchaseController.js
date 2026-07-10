@@ -7,7 +7,7 @@ import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import { validateDate, validateMongooseId} from "../../utils/validateTypes.js"
 import { generateRandom10DigitNumber } from "../../utils/generateRandomNumber.js"
 import Transaction from "../../models/TransactionModel.js"
-import RecentActivity from "../../models/recentActivityModel.js"
+import RecentActivity from "../../models/RecentActivityModel.js"
 
 
 export const adminCreatePurchase = async(req, res)=>{

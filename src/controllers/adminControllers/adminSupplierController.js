@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import Supplier from '../../models/SupplierModel.js' 
-import RecentActivity from "../../models/recentActivityModel.js";
+import RecentActivity from "../../models/RecentActivityModel.js";
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import { generateRandom10DigitNumber } from '../../utils/generateRandomNumber.js'
 

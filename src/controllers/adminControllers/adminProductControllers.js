@@ -7,6 +7,7 @@ import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import { validateMongooseId } from "../../utils/validateTypes.js"
 import ProductInventory from "../../models/ProductInventoryModel.js"
 import ProductReview from "../../models/ProductReviewModel.js"
+import RecentActivity from "../../models/RecentActivityModel.js"
 
 
 export const adminFetchForCreateProductPage = async(req,res)=>{
