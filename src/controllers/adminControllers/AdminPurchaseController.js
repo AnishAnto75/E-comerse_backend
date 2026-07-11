@@ -23,7 +23,7 @@ export const adminCreatePurchase = async(req, res)=>{
         session.startTransaction();
 
         // Validation
-        const supplier = await Supplier.findOne({ _id:supplier_id, deleted: false, status:"active"}).session(session);
+        const supplier = await Supplier.findOne({ _id: supplier_id, deleted: false, status:"active"}).session(session);
         if(!supplier){await session.abortTransaction(); return apiErrorResponce(res,"Invalid supplier");}
 
         const existingInvoice = await Purchase.findOne({ supplier_id, supplier_invoice_no: supplier_invoice_no.trim(), deleted:false }).session(session);
@@ -67,7 +67,7 @@ export const adminCreatePurchase = async(req, res)=>{
 
             const lineAmount = round(quantity * purchaseCost);
             const gstValue = round((lineAmount * gst)/100);
-            const lineTotal = round( lineAmount + gstValue + otherExpenses );
+            const lineTotal = round( lineAmount + gstValue + (otherExpenses * quantity) );
 
             gstAmount += gstValue;
             subTotal += lineTotal;
@@ -122,7 +122,7 @@ export const adminCreatePurchase = async(req, res)=>{
             grand_total: grandTotal,
             paid_amount: Number(paid_amount),
             balance_amount: balanceAmount,
-            payment_date: Number(paid_amount) > 0 ? (payment_date || new Date()) : null,
+            payment_date: Number(paid_amount) > 0 ? (payment_date || delivery_date) : null,
             added_by: req.user._id
         };
 
@@ -130,8 +130,11 @@ export const adminCreatePurchase = async(req, res)=>{
 
         // Inventory and Product update 
         for(const item of formattedProducts){
-            const product = productMap.get(item.product_id.toString());
             const totalStock = item.quantity_received + item.free_received;
+
+            const gstValue = Number(item.purchase_cost) * Number(item.gst_percentage) / 100
+            const unitPurchaseCost = (Number(item.purchase_cost) + Number(gstValue) + Number(item.other_expenses))
+
             const inventory = await ProductInventory.findOne({ product_id:item.product_id}).session(session);
 
             let updatedTotalStock = totalStock;
@@ -140,7 +143,6 @@ export const adminCreatePurchase = async(req, res)=>{
             if(!inventory){
                 await ProductInventory.create([{
                     product_id:item.product_id,
-                    product_barcode: product.product_barcode,
                     product_total_stock: totalStock,
                     product_stock:[{
                         purchase_id:purchase[0]._id,
@@ -154,10 +156,13 @@ export const adminCreatePurchase = async(req, res)=>{
                         purchase_cost: item.purchase_cost,
                         gst_percentage: item.gst_percentage,
                         other_expenses: item.other_expenses,
+                        other_expenses: item.other_expenses,
+                        unit_purchase_cost: unitPurchaseCost,
                         selling_price: item.selling_price
                     }]
                 }],{ session });
             }
+
             // update inventory
             else{
                 inventory.product_total_stock += totalStock;
@@ -176,6 +181,7 @@ export const adminCreatePurchase = async(req, res)=>{
                     purchase_cost: item.purchase_cost,
                     gst_percentage: item.gst_percentage,
                     other_expenses: item.other_expenses,
+                    unit_purchase_cost: unitPurchaseCost,
                     selling_price: item.selling_price
                 });
                 await inventory.save({ session });
@@ -237,8 +243,8 @@ export const adminCreatePurchase = async(req, res)=>{
                 supplier_id: supplier._id,
                 supplier_name: supplier.supplier_name,
                 paid_amount,
-                grand_total,
-                payment_status
+                grandTotal,
+                payment_method
             }
         }], { session });
 
@@ -252,6 +258,37 @@ export const adminCreatePurchase = async(req, res)=>{
 
     } finally { await session.endSession();}
 }
+
+export const adminSearchSuppliersForCreatePurchase = async (req, res) => {
+    try {
+        const { query } = req.query;
+        
+        const escapedQuery = query?.replace( /[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        if (!escapedQuery?.trim()) { return apiSucessResponce(res, "Supplier fetched successfully", [] , 200)}
+
+
+        // Search by name or Supplier
+        const products = await Supplier.find({ 
+            deleted: false, status: "active",
+            $or: [ 
+                { supplier_name: {$regex: escapedQuery, $options: "i"}}, 
+                { supplier_id: { $regex: escapedQuery, $options: "i"}},
+                { supplier_email: { $regex: escapedQuery, $options: "i"}},
+                { supplier_phone: { $regex: escapedQuery, $options: "i"}},
+            ]
+        })
+        .select( "_id supplier_id supplier_name supplier_email supplier_phone supplier_gst_no supplier_address")
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean();
+
+        return apiSucessResponce(res, "Supplier fetched successfully", products, 200)
+    } catch (error) {
+        console.error(error);
+        return apiErrorResponce(res, "failed to search Supplier")
+    }
+};
 
 export const adminSearchProductsForCreatePurchase = async (req, res) => {
     try {
@@ -300,106 +337,7 @@ export const adminSearchProductsForCreatePurchase = async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
-
 // old code
-
-// export const adminCreatePurchase = async(req, res)=>{
-//     const {user} = req.body
-//     const {data} = req.body
-//     if(!data){return apiErrorResponce(res, "Invalid Credentials")}
-
-//     if(!data.supplier_id || !data.invoice_no || !data.products || !data.total_purchase_amount ){return apiErrorResponce(res, "Invalid Credentials")}
-
-//     data['added_by'] = user._id
-
-//     const validSupplierId = validateMongooseId(data.supplier_id) 
-//     if(!validSupplierId) {return apiErrorResponce(res, "Invalid Credentials")}
- 
-//     const validSupplier = await Supplier.findOne({_id : data.supplier_id})
-//     if(!validSupplier) {return apiErrorResponce(res, "Invalid Credentials")}
-        
-//     const validatePurchase = await Purchase.findOne({supplier_id: data.supplier_id, invoice_no: data.invoice_no })
-//     if(validatePurchase){return apiErrorResponce(res , "Invoice No Already Existed")}
-    
-//     const productBarcodes = data.products.map( product => product.product_barcode)
-//     const validProduct = await Product.find({product_barcode : productBarcodes, deleted: false})
-//     if(validProduct.length !== data.products.length) {return apiErrorResponce(res, "Invalid Credentials")}
-    
-//     let validProduct1 = true
-//     data.products?.forEach((product, index) => {
-//         if(product.expire_date){
-//             if(!validateDate(product.expire_date)){ validProduct1 = false; return }
-//         }
-//         if(product.manufacture_date){
-//             if(!validateDate(product.manufacture_date) ){ validProduct1 = false; return }
-//         }
-//         if(product.quantity_recieved < 1 || !product.product_barcode || !product.quantity_recieved || !product.size || !product.mrp || !product.purchase_cost || !product.gst || Number.isNaN(Number(product.other_expences)) || !product.price || !product.total_purchase_cost){
-//             validProduct1 = false
-//             return
-//         }
-//     })
-//     if(!validProduct1){return apiErrorResponce(res, "Invalid Credentials")}
-        
-//     const session = await mongoose.startSession();
-//     try {
-//         session.startTransaction();
-
-//         const formatedData = {
-//             supplier_id : data.supplier_id,
-//             invoice_no : data.invoice_no,
-//             products : data.products,
-//             total_purchase_amount : data.total_purchase_amount,
-//             discount_received : data.discount_received,
-//             total_amount : data.total_amount,
-//             added_by : user._id
-//         }
-
-//         const purchase = new Purchase(formatedData)
-//         await purchase.save({session})
-
-//         for (const product of data.products) {
-//             const productInventory = await ProductInventory.findOne({product_barcode : product.product_barcode}).session(session)
-//             if (!productInventory) { throw new Error(`Inventory not found for ${product.product_barcode}`)}
-//             const formatedData = {
-//                 batch_no : product.batch_no,
-//                 stock : product.quantity_recieved,
-//                 size : product.size,
-//                 manufacture_date : product.manufacture_date,
-//                 expire_date : product.expire_date,
-//                 best_before : product.best_before,
-//                 mrp : product.mrp,
-//                 purchase_cost : product.purchase_cost ,
-//                 gst : product.gst ,
-//                 other_expences : product.other_expences ,
-//                 price: product.price,
-//                 total_purchase_cost : product.total_purchase_cost
-//             }
-//             productInventory.product_stock.push(formatedData)
-//             productInventory.product_total_stock = Number(productInventory.product_total_stock) + Number(product.quantity_recieved)
-//             await productInventory.save({session})
-//         }
-
-//         await session.commitTransaction();
-
-//         return apiSucessResponce(res , "Purchase Book created", purchase, 201)
-
-//     } catch (error) {
-//         await session.abortTransaction();
-//         console.log("error in adminCreatePurchase :" , error)
-//         return apiErrorResponce(res, "internal server error", null, 500 )
-//     } finally {
-//         await session.endSession();
-//     }
-// }
 
 
 export const adminFetchAllPurchases = async(req,res)=>{

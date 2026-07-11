@@ -1,8 +1,7 @@
 import mongoose from "mongoose"
 
 const productInventorySchema = mongoose.Schema({
-    product_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Product" , required: true },
-    product_barcode: { type : String, unique: true, required : true },
+    product_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Product" , required: true },    
     product_low_in_stock : { type: Number, default: 1 },
     product_total_stock : { type: Number, default: 0 },
     product_stock : [{
@@ -17,6 +16,7 @@ const productInventorySchema = mongoose.Schema({
         purchase_cost : { type : Number, required: true, min: 0 },                  // without gst
         gst_percentage : { type : Number, required: true, min: 0 },
         other_expenses : { type : Number, required: true, min: 0 },
+        unit_purchase_cost : { type : Number, required: true, min: 0 },              // with gst and other expenses
         selling_price: { type : Number, required: true, min: 0 },
     },{
         timestamps: true
