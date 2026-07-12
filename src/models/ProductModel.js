@@ -50,10 +50,11 @@ const productSchema = mongoose.Schema({
         purchase_cost : { type : Number, default: 0 },                  // without gst
         gst_percentage : { type : Number, default: 0 },
         other_expenses : { type : Number, default: 0 },
+        unit_purchase_cost : { type : Number, default: 0 },              // with gst and other expenses
         selling_price: { type : Number, default: 0 },
     },
     search_keywords: { type: [String], default: []},
-    out_of_stock : { type: Boolean, default: false },
+    out_of_stock : { type: Boolean, default: true },
     status: { type: String, enum : ['active', 'inactive'], default: "active" },
     deleted : {type: Boolean, default: false},
 },{ timestamps : true }

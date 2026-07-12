@@ -23,6 +23,7 @@ const router = express.Router()
 router.get('/product/fetch-for-create-product', adminFetchForCreateProductPage)
 router.get('/product/fetch-categories-for-create-product/:id', adminFetchCategoriesForCreateProductPage)
 router.post('/product/add-product' , verifyUser, verifingAdmin, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
+router.get('/product/all' , verifyUser, verifingAdmin, adminFetchAllProduct)
 
 
 // groups
@@ -39,7 +40,6 @@ router.post('/brand/create-brand', uploadBrandImage.single("brand_logo"), create
 
 // Supplier
 router.post('/supplier/create-supplier', verifyUser , verifingAdmin , createSupplier)
-
 
 
 // Purchase

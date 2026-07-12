@@ -20,28 +20,27 @@ const cartSchema = new mongoose.Schema({
 
 const userSchema = new mongoose.Schema({
     user_id :{ type: String, immutable: true, unique: true, required: true},
-    user_type :{ type: String, enum: ['user', 'admin'], default: 'user'},
     email : { type: String, immutable: true, unique: true, required: true, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, "Invalid email"]},
     password : {type: String, required: true},
     name: {type: String, required: true, trim: true, minlength: 2, maxlength: 50},
     gender : {type: String, enum: ['male', 'female', 'other'], required: true },
     DOB : {type: Date, default: null },
     phoneNumber :{type: String, default: null},
-    address: {
-        type: [addressSchema],
-        default: []
-    },
-    cart: {
-        type: [cartSchema],
-        default: []
-    },
+    // address: {
+    //     type: [addressSchema],
+    //     default: []
+    // },
+    // cart: {
+    //     type: [cartSchema],
+    //     default: []
+    // },
     notificationPreferences: {
         email: { type: Boolean, default: true},
         whatsapp: { type: Boolean, default: true},
         sms: { type: Boolean, default: true},
         push: { type: Boolean, default: true}
     },
-    order_id : [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order'}],
+    // order_id : [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order'}],
     status: { type: String, enum : ['active', 'inactive', 'blocked'], default: "active" },
     blocked_reason :{type: String, default: null},
     ratings : { type : Number, enum : [1 , 2 , 3 , 4 , 5], default: 1 },

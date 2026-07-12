@@ -141,8 +141,16 @@ export const createProduct = async(req , res)=>{
     } finally { session.endSession() }
 }
 
+export const adminFetchAllProduct = async(req,res)=>{
+    try {
+        const products = await Product.find({deleted : false})
 
-
+        return apiSucessResponce(res, "All Products Fetched SuccessFully", products)
+    } catch (error) {
+        console.log("error in fetchAllProduct controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}
 
 
 
@@ -178,21 +186,6 @@ export const createProduct = async(req , res)=>{
 // old
 
 
-export const adminFetchAllProduct = async(req,res)=>{
-    try {
-        const products = await Product.find({deleted : false})
-        .select(["product_brand", "product_barcode", "product_name", "product_photos", "status", "product_inventory_id"])
-        .populate({ path: ["product_brand"], strictPopulate: false })
-        .populate({ path: ["product_inventory_id"], strictPopulate: false })
-        .populate({ path: ["product_review_id"], strictPopulate: false })
-
-
-        return apiSucessResponce(res, "All Products Fetched SuccessFully", products)
-    } catch (error) {
-        console.log("error in fetchAllProduct controller" , error)
-        return apiErrorResponce(res , "internal Server Error")
-    }
-}
 
 
 

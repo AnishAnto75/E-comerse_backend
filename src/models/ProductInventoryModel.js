@@ -6,7 +6,7 @@ const productInventorySchema = mongoose.Schema({
     product_total_stock : { type: Number, default: 0 },
     product_stock : [{
         purchase_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Purchase" , required: true },
-        batch_no: { type: String },
+        batch_no: { type: String, default: "" },
         stock: {type: Number, min:[0, 'Must be at least 0, got {VALUE}'], required: true },
         size: {type: String, default: "" },
         manufacture_date: { type: Date, default: null},

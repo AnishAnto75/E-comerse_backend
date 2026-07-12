@@ -202,6 +202,7 @@ export const adminCreatePurchase = async(req, res)=>{
                         purchase_cost: item.purchase_cost,
                         gst_percentage: item.gst_percentage,
                         other_expenses: item.other_expenses,
+                        unit_purchase_cost: unitPurchaseCost,
                         selling_price: item.selling_price,
                     }}
                 }, { session }

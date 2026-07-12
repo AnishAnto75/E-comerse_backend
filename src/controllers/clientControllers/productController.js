@@ -1,6 +1,109 @@
 import Product from "../../models/ProductModel.js"
+import ProductInventory from "../../models/ProductInventoryModel.js";
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import {validateMongooseId} from "../../utils/validateTypes.js"
+import mongoose from "mongoose";
+
+export const fetchProducts = async (req, res) => {
+    try {
+
+        const { page = 1, limit = 20, search = "", category, brand } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const filter = {
+            deleted: false,
+            status: "active",
+            out_of_stock: false
+        };
+
+        if (category && mongoose.Types.ObjectId.isValid(category)) {
+            filter.product_category = new mongoose.Types.ObjectId(category);
+        }
+        if (brand && mongoose.Types.ObjectId.isValid(brand)) {
+            filter.product_brand = new mongoose.Types.ObjectId(brand);
+        }
+        if (search.trim()) {
+            const regex = new RegExp(search.trim(), "i");
+            filter.$or = [
+                { product_name: regex },
+                { product_barcode: regex },
+                { search_keywords: regex }
+            ];
+        }
+
+        const result = await Product.aggregate([
+            { $match: filter },
+            {
+                $lookup: {
+                    from: "productinventories",
+                    localField: "_id",
+                    foreignField: "product_id",
+                    as: "inventory"
+                }
+            },
+            { $unwind: "$inventory" },
+            { $match: { "inventory.product_total_stock": { $gt: 0 }} },
+            { $addFields: {
+                fifoBatch: {
+                    $arrayElemAt: ["$inventory.product_stock", 0]
+                }
+            }},
+            { $facet: {
+                products: [
+                    { $project: {
+                        product_name: 1,
+                        product_photo: 1,
+                        product_barcode: 1,
+                        product_UOM: 1,
+                        current_stock: "$inventory.product_total_stock",
+                        size: "$fifoBatch.size",
+                        mrp: "$fifoBatch.mrp",
+                        selling_price: "$fifoBatch.selling_price",
+                    }},
+                    { $sort: { createdAt: -1 } },
+                    { $skip: skip },
+                    { $limit: Number(limit) }
+                ],
+                totalCount: [{ $count: "count" }]
+            }}
+        ]);
+
+        const products = result[0].products;
+        const totalProducts = result[0].totalCount[0]?.count || 0;
+
+        const pagination = {
+            page: Number(page),
+            limit: Number(limit),
+            totalProducts,
+            totalPages: Math.ceil(totalProducts / Number(limit))
+        };
+        return apiSucessResponce(res, "Product Fetched Sucessfully", {products, pagination})
+
+    } catch (error) {
+        console.log("error in fetchProducts controller", error)
+        return apiErrorResponce(res, "Internal Server Error")
+    }
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// old
 
 export const fetchAllProduct = async(req , res)=>{
     try {

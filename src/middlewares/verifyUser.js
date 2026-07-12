@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken'
 import User from '../models/UserModel.js'
 import { apiErrorResponce, apiSucessResponce } from '../utils/apiResponce.js'
+import { cookieOption } from '../utils/cookieOption.js'
 
 const renewToken = async (req, res , next) => {
     
@@ -13,28 +14,38 @@ const renewToken = async (req, res , next) => {
         const refreshtoken = req.cookies.refreshToken;
         if(!refreshtoken) { return apiErrorResponce(res, "No Refresh token")}
 
-        jwt.verify(refreshtoken, REFRESH_TOKEN_SECRET_KEY , async(error , decoded)=>{
-            if (error){
-                console.log("Error in renew token middleware :",error)
-                return apiErrorResponce(res, "Invalid Refresh Token")
-            }
-            const selectedValues = ['_id', "user_type", "email", "name", "order_id", "blocked", "address", 'cart']
-            const user = await User.findOne({email: decoded.email, deleted: false})
-            if(!user){ 
-                res.clearCookie('refreshToken')
-                res.clearCookie('accessToken')
-                return res.status(400).send({message : "No User Found"})
-            } 
-            const accessToken = jwt.sign({email : user.email}, ACCESS_TOKEN_SECRET_KEY , {expiresIn: accessTokenExpirationTime} )
-            res.cookie('accessToken', accessToken, {maxAge: 600000})
+        const decoded = jwt.verify(refreshtoken, REFRESH_TOKEN_SECRET_KEY)
 
-            user._doc.cart = user.cart
-            req.user = user
-            next()            
+        const user = await User.findOne({email: decoded.email, deleted: false}).select(" _id email name user_id status DOB gender").lean()
+        if(!user){ 
+            res.clearCookie('refreshToken', cookieOption)
+            res.clearCookie('accessToken', cookieOption)
+            return apiErrorResponce(res, "No User Found", 404)
+        }
+        if (user.status == "blocked") {
+            res.clearCookie("accessToken", cookieOption);
+            res.clearCookie("refreshToken", cookieOption);
+            return apiErrorResponce(res, "Account blocked", 403);
+        }
+        const accessToken = jwt.sign({email : user.email}, ACCESS_TOKEN_SECRET_KEY , {expiresIn: accessTokenExpirationTime} )
+        res.cookie('accessToken', accessToken, {
+            ...cookieOption,
+            maxAge: 10 * 60 * 1000,
         })
+
+        req.user = user
+        return next()            
+    
     } catch (error) {
         console.log("Error in renewToken middleware", error)
-        apiErrorResponce(res , "internal server error" , error)
+
+        if ( error.name === "TokenExpiredError" || error.name === "JsonWebTokenError") {
+            res.clearCookie("accessToken", cookieOption);
+            res.clearCookie("refreshToken", cookieOption);
+            return apiErrorResponce(res, "Unauthorized", 401);
+        }
+
+        return apiErrorResponce(res, "Internal Server Error");
     }
 }
 
@@ -47,23 +58,29 @@ const verifyUser = async(req, res, next) => {
         if(!accesstoken) {renewToken(req, res , next); return} 
     
         const token = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET_KEY )
-        if(!token) { return apiErrorResponce(res, "Invalid Token")}
 
-        const selectedValues = ['_id', "user_type", "email", "name", "order_id", "blocked", "address", 'cart']
-        let user = await User.findOne({email: token.email, deleted: false})
+        let user = await User.findOne({email: token.email, deleted: false}).select(" _id email name user_id status DOB gender").lean()
         if(!user){ 
-            res.clearCookie('refreshToken')
-            res.clearCookie('accessToken')
-            return res.status(400).send({message : "No User Found"})
-        } 
+            res.clearCookie('refreshToken', cookieOption)
+            res.clearCookie('accessToken', cookieOption)
+            return apiErrorResponce(res, "No User Found", 404)
+        }
+        if (user.status == "blocked") {
+            res.clearCookie("accessToken", cookieOption);
+            res.clearCookie("refreshToken", cookieOption);
+            return apiErrorResponce(res, "Account blocked", 403);
+        }
 
-        user._doc.cart = user.cart
         req.user = user
-        next()
+        return next()
 
     } catch (error) {
         console.log("Error in verifyUser middleware", error)
-        apiErrorResponce(res , "internal server error" , error)
+        if (error.name === "TokenExpiredError") { 
+            return renewToken(req, res, next);
+        }
+        if (error.name === "JsonWebTokenError") { return apiErrorResponce(res, "Unauthorized", 401);}
+        return apiErrorResponce(res , "internal server error" , error)
     }
 }
 

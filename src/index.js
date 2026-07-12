@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser'
 import authRoutes from './routes/authRoutes.js'
 import productRoutes from './routes/productRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
+import userRoutes from './routes/userRoutes.js'
 import cartRoutes from './routes/cartRoutes.js'
 import addressRoutes from './routes/addressRoutes.js'
 import orderRoutes from './routes/orderRoutes.js'
@@ -37,6 +38,7 @@ app.use('/api/address' , addressRoutes)
 app.use('/api/order' , orderRoutes)
 
 app.use('/api/admin' , adminRoutes)
+app.use('/api/user' , userRoutes)
 
 app.listen( PORT , ()=>{
     console.log('server is running on port:',PORT)
