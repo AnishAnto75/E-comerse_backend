@@ -1,7 +1,7 @@
 import mongoose from "mongoose"
 
 const productInventorySchema = mongoose.Schema({
-    product_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Product" , required: true },    
+    product_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Product", unique: true , required: true },    
     product_low_in_stock : { type: Number, default: 1 },
     product_total_stock : { type: Number, default: 0 },
     product_stock : [{
