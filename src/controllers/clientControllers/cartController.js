@@ -77,20 +77,53 @@ export const fetchCart = async(req , res)=>{
 }
 
 export const fetchFullCart = async(req , res)=>{
+
     try {
-
-        const cart = await Cart.findOne( { user_id: req.user._id }, { products: 1 } )
-        if (!cart) { return apiSucessResponce(res, "Success", { cartCount: 0, products: [] }) }
-
-        return apiSucessResponce(res, "Success", { cartCount: cart.products.length, products: cart.products });
+        const cart = await Cart.aggregate([ 
+            { $match: { user_id: new mongoose.Types.ObjectId(req.user._id) } },
+            { $unwind: "$products" },
+            { $lookup: {
+                from: "products",
+                localField: "products.product_id",
+                foreignField: "_id",
+                as: "product"
+            }},
+            { $unwind: "$product" },
+            { $lookup: {
+                from: "productinventories",
+                localField: "product._id",
+                foreignField: "product_id",
+                as: "inventory"
+            }},
+            { $unwind: { path: "$inventory", preserveNullAndEmptyArrays: true }},
+            { $project: {
+                _id: 0,
+                product_id: "$product._id",
+                quantity: "$products.quantity",
+                product_name: "$product.product_name",
+                product_photo: "$product.product_photo",
+                product_UOM: "$product.product_UOM",
+                product_net_unit: "$product.product_net_unit",
+                selling_price: "$product.latest_batch_details.selling_price",
+                mrp: "$product.latest_batch_details.mrp",
+                size: "$product.latest_batch_details.size",
+                current_stock: { $ifNull: ["$inventory.product_total_stock", 0] },
+                min_order_quantity: "$product.product_min_order_quantity",
+                max_order_quantity: "$product.product_max_order_quantity",
+                out_of_stock: "$product.out_of_stock",
+                status: "$product.status",
+                deleted: "$product.deleted",
+                added_at: "$products.added_at"
+            }},
+            { $sort: { added_at: -1 } }
+        ]);
+        return apiSucessResponce( res, "Cart fetched successfully", { products: cart, cartCount: cart.length } );
 
     } catch (error) {
-        console.log("fetchCart controller error :", error)
-        apiErrorResponce(res , "Internal Server Error" , null , 500)
+        console.log("fetchFullCart controller :", error);
+        return apiErrorResponce( res, "Internal Server Error" );
     }
-}
-
-
+};
 
 
 

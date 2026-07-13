@@ -16,7 +16,7 @@ const renewToken = async (req, res , next) => {
 
         const decoded = jwt.verify(refreshtoken, REFRESH_TOKEN_SECRET_KEY)
 
-        const user = await User.findOne({email: decoded.email, deleted: false}).select(" _id email name user_id status DOB gender").lean()
+        const user = await User.findOne({email: decoded.email, deleted: false}).select("_id email name user_id status DOB gender").lean()
         if(!user){ 
             res.clearCookie('refreshToken', cookieOption)
             res.clearCookie('accessToken', cookieOption)
@@ -37,13 +37,13 @@ const renewToken = async (req, res , next) => {
         return next()            
     
     } catch (error) {
-        console.log("Error in renewToken middleware", error)
-
+        
         if ( error.name === "TokenExpiredError" || error.name === "JsonWebTokenError") {
             res.clearCookie("accessToken", cookieOption);
             res.clearCookie("refreshToken", cookieOption);
             return apiErrorResponce(res, "Unauthorized", 401);
         }
+        console.log("Error in renewToken middleware", error)
 
         return apiErrorResponce(res, "Internal Server Error");
     }
@@ -55,11 +55,11 @@ const verifyUser = async(req, res, next) => {
         const ACCESS_TOKEN_SECRET_KEY = process.env.ACCESS_TOKEN_SECRET_KEY
 
         const accesstoken = req.cookies.accessToken;
-        if(!accesstoken) {renewToken(req, res , next); return} 
+        if(!accesstoken) {return renewToken(req, res , next) } 
     
         const token = jwt.verify(accesstoken, ACCESS_TOKEN_SECRET_KEY )
 
-        let user = await User.findOne({email: token.email, deleted: false}).select(" _id email name user_id status DOB gender").lean()
+        let user = await User.findOne({email: token.email, deleted: false}).select("_id email name user_id status DOB gender").lean()
         if(!user){ 
             res.clearCookie('refreshToken', cookieOption)
             res.clearCookie('accessToken', cookieOption)
@@ -75,10 +75,10 @@ const verifyUser = async(req, res, next) => {
         return next()
 
     } catch (error) {
-        console.log("Error in verifyUser middleware", error)
         if (error.name === "TokenExpiredError") { 
             return renewToken(req, res, next);
         }
+        console.log("Error in verifyUser middleware", error)
         if (error.name === "JsonWebTokenError") { return apiErrorResponce(res, "Unauthorized", 401);}
         return apiErrorResponce(res , "internal server error" , error)
     }

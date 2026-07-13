@@ -14,7 +14,7 @@ router.get('/product' , fetchProducts)
 // cart
 router.get('/cart' , verifyUser , fetchCart)
 router.post('/cart/add' , verifyUser , addToCart)
-router.post('/cart/full-cart' , verifyUser , fetchFullCart)
+router.get('/cart/full-cart' , verifyUser , fetchFullCart)
 
 
 
