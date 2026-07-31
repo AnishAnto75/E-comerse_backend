@@ -62,6 +62,65 @@ export const addToCart = async (req, res) => {
     } 
 };
 
+export const minusToCart = async (req, res) => {
+
+    try {
+
+        const userId = req.user._id;
+        const { product_id } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(product_id)) { return apiErrorResponce(res, "Invalid Product") }
+
+        const product = await Product.findOne({_id: product_id, deleted: false, status: "active", out_of_stock: false })
+        if (!product) { return apiErrorResponce(res, "Product not found") }
+
+        let cart = await Cart.findOne({ user_id: userId })
+        if (!cart) { return apiErrorResponce(res, "Cart not found") }
+
+        const existingProduct = cart.products.find( item => item.product_id.toString() === product_id);
+        if (!existingProduct) { return apiErrorResponce(res, "Product not found in cart");}
+
+        let newQuantity = existingProduct.quantity - 1;
+        if (newQuantity < product.product_min_order_quantity) { return apiErrorResponce(res, `Minimum quantity is ${product.product_min_order_quantity}`)}
+
+        existingProduct.quantity = newQuantity;
+        await cart.save();
+
+        return apiSucessResponce(res, "Cart Updated" , { product_id, updated_quantity: newQuantity , cartCount: cart.products.length });
+
+    } catch (error) {
+        console.log("Error in addToCart:", error);
+        return apiErrorResponce(res, "Internal Server Error");
+    } 
+};
+
+export const removeProductFromCart = async (req, res) => {
+
+    try {
+
+        const userId = req.user._id;
+        const { product_id } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(product_id)) { return apiErrorResponce(res, "Invalid Product");}
+
+        const cart = await Cart.findOne({ user_id: userId });
+        if (!cart) { return apiErrorResponce(res, "Cart not found");}
+
+        const existingProduct = cart.products.some( item => item.product_id.toString() === product_id )
+        if (!existingProduct) { return apiErrorResponce(res, "Product not found in cart") }
+
+        cart.products = cart.products.filter( item => item.product_id.toString() !== product_id);
+
+        await cart.save();
+
+        return apiSucessResponce(res, "Product removed from cart", { product_id, cartCount: cart.products.length });
+
+    } catch (error) {
+        console.log("removeProductFromCart:", error);
+        return apiErrorResponce(res, "Internal Server Error");
+    } 
+};
+
 export const fetchCart = async(req , res)=>{
     try {
 
@@ -99,6 +158,7 @@ export const fetchFullCart = async(req , res)=>{
             { $project: {
                 _id: 0,
                 product_id: "$product._id",
+                product_barcode : "$product.product_barcode",
                 quantity: "$products.quantity",
                 product_name: "$product.product_name",
                 product_photo: "$product.product_photo",
