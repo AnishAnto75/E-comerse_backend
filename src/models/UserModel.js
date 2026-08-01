@@ -23,27 +23,18 @@ const userSchema = new mongoose.Schema({
     email : { type: String, immutable: true, unique: true, required: true, lowercase: true, trim: true, match: [/^\S+@\S+\.\S+$/, "Invalid email"]},
     password : {type: String, required: true},
     name: {type: String, required: true, trim: true, minlength: 2, maxlength: 50},
-    gender : {type: String, enum: ['male', 'female', 'other'], required: true },
+    gender : {type: String, enum: ['male', 'female', 'others'], required: true },
     DOB : {type: Date, default: null },
     phoneNumber :{type: String, default: null},
-    // address: {
-    //     type: [addressSchema],
-    //     default: []
-    // },
-    // cart: {
-    //     type: [cartSchema],
-    //     default: []
-    // },
     notificationPreferences: {
         email: { type: Boolean, default: true},
         whatsapp: { type: Boolean, default: true},
         sms: { type: Boolean, default: true},
         push: { type: Boolean, default: true}
     },
-    // order_id : [{ type: mongoose.SchemaTypes.ObjectId, ref: 'Order'}],
     status: { type: String, enum : ['active', 'inactive', 'blocked'], default: "active" },
     blocked_reason :{type: String, default: null},
-    ratings : { type : Number, enum : [1 , 2 , 3 , 4 , 5], default: 1 },
+    score : { type : Number, enum : [1 , 2 , 3 , 4 , 5], default: 1 },
     deleted : {type: Boolean, default: false},
     deletedAt: { type: Date, default: null }
 },{
