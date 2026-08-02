@@ -78,7 +78,40 @@ export const fetchAddress = async(req , res) =>{
     }
 };
 
+export const deleteAddress = async (req, res) => {
 
+    const session = await mongoose.startSession();
+
+    try {
+
+        const userId = req.user._id;
+        const { _id } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(_id)) { return apiErrorResponce(res, "Invalid Address") }
+
+        session.startTransaction();
+
+        const address = await Address.findOne({ _id, user_id: userId }).session(session);
+        if (!address) { await session.abortTransaction(); return apiErrorResponce(res, "Address not found", 404) }
+
+        await Address.deleteOne({ _id, user_id: userId }).session(session);
+
+        if (address.is_default) {
+            const nextAddress = await Address.findOne({ user_id: userId }).sort({ createdAt: -1 }).session(session);
+            if (nextAddress) {
+                nextAddress.is_default = true;
+                await nextAddress.save({ session });
+            }
+        }
+        await session.commitTransaction();
+        return apiSucessResponce(res, "Address deleted successfully");
+
+    } catch (error) {
+        await session.abortTransaction();
+        console.log("deleteAddress error:", error);
+        return apiErrorResponce(res, "Internal Server Error");
+    } finally { session.endSession() }
+};
 
 
 
@@ -87,34 +120,6 @@ export const fetchAddress = async(req , res) =>{
 
 
 // old codes
-
-export const deleteAddress = async(req , res)=>{
-    try {
-        const data = req.body.data
-        if(!data){return apiErrorResponce(res, "Invalid Credentials")}
-
-        const {_id} = data
-        const user = req.body.user
-        const address = req.body.user.address
-
-        console.log(_id)
-        if(!address || !_id){ return apiErrorResponce(res , "Invalid Credentials")}
-
-        let newAddresses = address.map(address =>{
-            if(address._id.toString() == _id.toString()){ return } 
-            else { return address}
-        })
-
-        newAddresses = newAddresses.filter( (e)=> {return e }); // Removes the null and undefined values 
-
-        const userAddress = await User.findOneAndUpdate({_id : user._id},{address : newAddresses} , {new : true}).select('address')
-
-        return apiSucessResponce(res , "Address Deleted Successfully" , userAddress)
-    } catch (error) {
-        console.log("Error in deleteAddress controller : ", error )
-        return apiErrorResponce(res , "Internal Server Error")
-    }
-}
 
 export const editAddress = async(req , res)=>{
     try{

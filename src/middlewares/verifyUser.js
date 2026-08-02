@@ -52,6 +52,7 @@ const renewToken = async (req, res , next) => {
 const verifyUser = async(req, res, next) => {
 
     try {
+
         const ACCESS_TOKEN_SECRET_KEY = process.env.ACCESS_TOKEN_SECRET_KEY
 
         const accesstoken = req.cookies.accessToken;
