@@ -127,7 +127,7 @@ export const fetchCart = async(req , res)=>{
         const cart = await Cart.findOne( { user_id: req.user._id }, { products: 1 } )
         if (!cart) { return apiSucessResponce(res, "Success", { cartCount: 0, products: [] }) }
 
-        return apiSucessResponce(res, "Success", { cartCount: cart.products.length, products: cart.products });
+        return apiSucessResponce(res, "Success", { cartCount: cart.products.length, cart: cart.products });
 
     } catch (error) {
         console.log("fetchCart controller error :", error)
@@ -177,7 +177,7 @@ export const fetchFullCart = async(req , res)=>{
             }},
             { $sort: { added_at: -1 } }
         ]);
-        return apiSucessResponce( res, "Cart fetched successfully", { products: cart, cartCount: cart.length } );
+        return apiSucessResponce( res, "Cart fetched successfully", { cart: cart, cartCount: cart.length } );
 
     } catch (error) {
         console.log("fetchFullCart controller :", error);
