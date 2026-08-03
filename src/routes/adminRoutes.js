@@ -22,8 +22,8 @@ const router = express.Router()
 // product 
 router.get('/product/fetch-for-create-product', adminFetchForCreateProductPage)
 router.get('/product/fetch-categories-for-create-product/:id', adminFetchCategoriesForCreateProductPage)
-router.post('/product/add-product' , verifyUser, verifingAdmin, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
-router.get('/product/all' , verifyUser, verifingAdmin, adminFetchAllProduct)
+router.post('/product/add-product' , verifyUser, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
+router.get('/product/all' , verifyUser, adminFetchAllProduct)
 
 
 // groups
@@ -39,13 +39,13 @@ router.post('/brand/create-brand', uploadBrandImage.single("brand_logo"), create
 
 
 // Supplier
-router.post('/supplier/create-supplier', verifyUser , verifingAdmin , createSupplier)
+router.post('/supplier/create-supplier', verifyUser , createSupplier)
 
 
 // Purchase
-router.post('/purchase/create-purchase' , verifyUser, verifingAdmin, adminCreatePurchase)
-router.get('/purchase/create-purchase/fetch-supplier/' , verifyUser, verifingAdmin, adminSearchSuppliersForCreatePurchase)
-router.get('/purchase/create-purchase/search-products/' , verifyUser, verifingAdmin, adminSearchProductsForCreatePurchase)
+router.post('/purchase/create-purchase' , verifyUser, adminCreatePurchase)
+router.get('/purchase/create-purchase/fetch-supplier/' , verifyUser, adminSearchSuppliersForCreatePurchase)
+router.get('/purchase/create-purchase/search-products/' , verifyUser, adminSearchProductsForCreatePurchase)
 
 
 

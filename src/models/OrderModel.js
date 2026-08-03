@@ -3,69 +3,120 @@ import mongoose from "mongoose";
 const orderSchema = mongoose.Schema({
     order_id : { type : String, unique: true, required : true },
     user_id : { type : mongoose.SchemaTypes.ObjectId, ref : 'User', required : true },
-    total_mrp:{ type : Number, required : true },
-    total_price:{ type : Number, required : true },
-    delivery_charges : { type : Number, required : true },
-    total_amount : {type : Number, required : true},
-    payment_method : {type : String, enum : ["Cash On Delivery" , "UPI"], required : true},
-    total_no_of_product : {type : Number , required : true},
-    delivery_address :{
-        name : { type : String, required : true },
-        phoneNo : {type : Number, required : true},
-        alternatePhoneNo : { type : Number, default: null },
-        pincode : { type : Number, required : true},
-        houseNo : { type : String, default: null},
-        landMark :{type : String, default: null},
-        city :{type : String, required : true},
-        district : {type : String, required : true},
-        state : {type : String, required : true},
-        addressType : {type : String, enum : ['home' , 'office'], required : true}
+    total_mrp:{ type : Number, required : true, min: 1 },
+    total_price:{ type : Number, required : true, min: 1 },
+    delivery_charges : { type : Number, required : true, min: 0 },
+    total_amount : {type : Number, required : true, min: 200},
+    total_gst: { type: Number, required: true, min: 1 },
+    total_quantity : {type : Number , required : true, min: 1},
+    coupon: {
+        type: {
+            code: { type: String, default: "" },
+            discount: { type: Number, default: 0, min: 0 },
+            coupon_id: { type: mongoose.SchemaTypes.ObjectId, ref: "Coupon" }
+        },
+        default: undefined
     },
-    product_details :[{
-        product_id: {type : mongoose.SchemaTypes.ObjectId, required : true},
-        product_barcode: {type : String, required : true},
-        product_batch_no: {type : String, default: null },
-        product_name: {type : String, required : true } ,
-        product_mrp: {type : Number, required : true },
-        product_price: { type : Number, required : true },
-        product_manufacture_date: { type : Date, default: null },
-        product_expire_date: { type : Date, default: null },
-        no_of_product: {type: Number, required : true },
-    }],
+    delivery_address :{
+        type: {
+            name: { type: String, required: true, trim: true },
+            phone_number: { type: String, required: true, trim: true },
+            alternate_phone_number: { type: String, default: "", trim: true },
+            house_no: { type: String, required: true, trim: true },
+            area: { type: String, required: true, trim: true },
+            landmark: { type: String, default: "",trim: true },
+            city: { type: String, required: true, trim: true },
+            district: { type: String, required: true, trim: true },
+            state: { type: String, required: true, trim: true },
+            pincode: { type: String, required: true, trim: true },
+            address_type: { type: String, enum: ["home", "work"],},
+        },
+        immutable: true,
+    },
+    items :{
+        type: [{
+            product_id: {type : mongoose.SchemaTypes.ObjectId, ref: "Product" ,required : true},
+            inventory_batch_id: {type : mongoose.SchemaTypes.ObjectId, required : true},
+            product_barcode: {type : String, required : true},
+            product_name: { type : String, required : true, trim: true },
+            product_UOM: { type: String, enum : ['gm','kg','ml','lit','pcs','cap'], required: true },
+            product_photo : {type: String, required: true },
+            batch_no: { type: String, default: "" },
+            size: {type: String, default: "" },
+            manufacture_date: { type: Date, default: null},
+            expiry_date: { type: Date, default: null },
+            mrp: { type : Number, required: true, min: 0 },
+            unit_price: { type : Number, required: true, min: 0 },
+            subtotal: { type : Number, required: true, min: 0 },
+            gst_percentage: { type : Number, required: true, min: 0 },
+            quantity: {type: Number, required : true, min: 1 },
+        }],
+        immutable: true,
+        validate: {
+            validator: function (arr) { return Array.isArray(arr) && arr.length > 0 },
+            message: "Order must contain at least one item."
+        }
+    },
+    payment: {
+        gateway: { type: String,enum: [ "", "Razorpay", "PhonePe", "Cashfree", "Stripe" ], default: "" },
+        method : {type : String, enum: [ "COD", "UPI", "Card", "Net Banking" ], required : true},
+        status: { type: String, enum: [ "Pending", "Paid", "Failed", "Refunded" ], default: "Pending" },
+        transaction_id: { type: String, default: ""},
+        paid_at: { type : Date },
+        failed_at: { type : Date },
+        refund: {
+            type: {
+                amount: { type : Number, min: 1 },
+                status: { type: String, enum: ["Pending", "Completed", "Rejected"] },
+                transaction_id: { type: String, default: "" },
+                refunded_at: { type : Date }
+            },
+            default: undefined
+        }
+    },
+    current_status: { type: String, enum: [ "Placed", "Confirmed", "Out For Delivery", "Delivered","Cancelled" ], default: "Placed" },
     order_status: {
         placed:{
-            status: {type : Boolean, default : true},
-            date: { type : Date, immutable: true, default: Date.now }
+            date: { type : Date, default: Date.now }
         },
         confirmed:{
-            status: {type : Boolean, default : false},
             date: { type : Date},
             confirmation_by : { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         out:{
-            status: {type : Boolean, default : false},
             date: { type : Date },
             taken_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
             confirmation_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         delivered: {
-            status: {type : Boolean, default : false},
             date: { type : Date},
-            delivered_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
+            delivered_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
+            otp_verified: { type: Boolean, default: false }
         },
         canceled: {
-            status: {type : Boolean, default : false},
             date: {type : Date},
             canceled_by: {type: String, enum: ["customer", "staff"]},
             canceled_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref: 'Staff'},
-            reason_for_cancel: {type: String}
+            reason: {type: String, maxlength: 500}
         }
     },
-    order_rating : { type : Number, enum : [1 , 2 , 3 , 4 , 5] },
-    order_review:{ type : String }
+    rating: {
+        type: { 
+            score: { type : Number,  min: 1, max: 5 },
+            review: { type : String, maxlength: 1000, trim: true },
+            reviewed_at: {type: Date}
+        },
+        default: undefined
+    }
 },{
     timestamps : true
 })
+
+orderSchema.index({ user_id: 1, createdAt: -1 });
+
+orderSchema.index({ "payment.status": 1 });
+
+orderSchema.index({ current_status: 1 });
 
 const Order = mongoose.model('Order' , orderSchema )
 export default Order
