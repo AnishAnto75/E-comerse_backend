@@ -74,7 +74,7 @@ const orderSchema = mongoose.Schema({
             default: undefined
         }
     },
-    current_status: { type: String, enum: [ "Placed", "Confirmed", "Out For Delivery", "Delivered","Cancelled" ], default: "Placed" },
+    current_status: { type: String, enum: [ "placed", "confirmed", "out", "delivered", "cancelled" ], default: "placed" },
     order_status: {
         placed:{
             date: { type : Date, default: Date.now }
@@ -89,11 +89,11 @@ const orderSchema = mongoose.Schema({
             confirmation_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         delivered: {
-            date: { type : Date},
+            date: { type : Date },
             delivered_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
-            otp_verified: { type: Boolean, default: false }
+            otp_verified: { type: Boolean }
         },
-        canceled: {
+        cancelled: {
             date: {type : Date},
             canceled_by: {type: String, enum: ["customer", "staff"]},
             canceled_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref: 'Staff'},

@@ -2,15 +2,6 @@ import Order from "../../models/OrderModel.js"
 import Staff from "../../models/StaffModel.js"
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 
-export const fetchAllOrders = async(req , res)=>{
-    try {
-        const orders = await Order.find()
-        apiSucessResponce(res , "All Orders Fetched" , orders)
-    } catch (error) {
-        console.log("error in fetchAllOrders controller : " ,error)
-        apiErrorResponce(res , "Internal Server Error" , null , 500)
-    }
-}
 
 export const fetchAdminOrder = async(req , res)=>{
     try {
@@ -25,6 +16,40 @@ export const fetchAdminOrder = async(req , res)=>{
         apiSucessResponce(res , "Order Fetched Sucessfully" , order)
     } catch (error) {
         console.log("error in fetchAdminOrder controller : " ,error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// old code
+
+
+
+
+
+
+
+
+
+
+export const fetchAllOrders = async(req , res)=>{
+    try {
+        const orders = await Order.find()
+        apiSucessResponce(res , "All Orders Fetched" , orders)
+    } catch (error) {
+        console.log("error in fetchAllOrders controller : " ,error)
         apiErrorResponce(res , "Internal Server Error" , null , 500)
     }
 }

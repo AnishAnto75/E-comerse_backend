@@ -48,6 +48,9 @@ router.get('/purchase/create-purchase/fetch-supplier/' , verifyUser, adminSearch
 router.get('/purchase/create-purchase/search-products/' , verifyUser, adminSearchProductsForCreatePurchase)
 
 
+//orders
+router.get('/order/order_id/:order_id' , verifyUser, fetchAdminOrder )
+
 
 
 
@@ -110,7 +113,7 @@ router.get('/staff/:id' , verifyUser, verifingAdmin, adminFetchStaff )
 
 
 //Orders
-router.get('/order/all-order' , verifyUser, verifingAdmin, fetchAllOrders )
+router.get('/order/all-order' , verifyUser, fetchAllOrders )
 router.get('/order/order_id/:order_id' , verifyUser, verifingAdmin, fetchAdminOrder )
 router.patch('/order/update/confirmed/:id' , verifyUser, verifingAdmin, updateOrderStatusToConfirmed )
 router.patch('/order/update/out/:id' , verifyUser, verifingAdmin, updateOrderStatusToOut )
