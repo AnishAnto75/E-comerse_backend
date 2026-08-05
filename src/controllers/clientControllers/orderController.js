@@ -132,6 +132,21 @@ export const createOrder = async(req , res)=>{
         cart.products = [];
         await cart.save({session})
 
+        // Saving Transaction of the order
+        if(!payment_method == "COD"){
+            const transactionData = {
+                type: "income",
+                category: "Sales",
+                title: `Income Order ${order.order_id}`,
+                amount: order.total_amount,
+                payment_method: order.payment_method,
+                reference_no: order.order_id,
+                order_id: order._id
+            }
+            const transaction = new Transaction(transactionData);
+            await transaction.save({ session });
+        }
+
         await session.commitTransaction();
         return apiSucessResponce(res, "Order Placed Successfully", { order_id: order.order_id, total_amount: order.total_amount, payment_status: order.payment.status }, 201 )
        

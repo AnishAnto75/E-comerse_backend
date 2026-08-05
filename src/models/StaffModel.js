@@ -21,7 +21,13 @@ const staffSchema = mongoose.Schema({
     emergency_contact_name: {type: String, default: null},
     emergency_contact_number: {type: String, default: null},
     DOB: {type: Date, default: null},
-    photo: {type: String, default:null},
+    photo: {
+        type: {
+            url: {type: String, required: true},
+            public_id: { type: String, default: ""},
+        },
+        required: true,
+    },
     phone_number: {type: String, required: true},
     alternate_phone_number: {type: String, default: null},
     qualification: {type: String, default: null},

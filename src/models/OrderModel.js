@@ -9,6 +9,7 @@ const orderSchema = mongoose.Schema({
     total_amount : {type : Number, required : true, min: 200},
     total_gst: { type: Number, required: true, min: 1 },
     total_quantity : {type : Number , required : true, min: 1},
+    OTP : {type : Number , default: ""},
     coupon: {
         type: {
             code: { type: String, default: "" },
@@ -77,26 +78,31 @@ const orderSchema = mongoose.Schema({
     current_status: { type: String, enum: [ "placed", "confirmed", "out", "delivered", "cancelled" ], default: "placed" },
     order_status: {
         placed:{
+            status: { type: Boolean, default: true },
             date: { type : Date, default: Date.now }
         },
         confirmed:{
+            status: { type: Boolean, default: false },
             date: { type : Date},
             confirmation_by : { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         out:{
+            status: { type: Boolean, default: false },
             date: { type : Date },
             taken_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
             confirmation_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'}
         },
         delivered: {
+            status: { type: Boolean, default: false },
             date: { type : Date },
             delivered_by: { type : mongoose.SchemaTypes.ObjectId, ref : 'Staff'},
             otp_verified: { type: Boolean }
         },
         cancelled: {
+            status: { type: Boolean, default: false },
             date: {type : Date},
-            canceled_by: {type: String, enum: ["customer", "staff"]},
-            canceled_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref: 'Staff'},
+            cancelled_by: {type: String, enum: ["customer", "staff"]},
+            cancelled_staff_id: {type: mongoose.SchemaTypes.ObjectId, ref: 'Staff'},
             reason: {type: String, maxlength: 500}
         }
     },
