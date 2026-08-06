@@ -18,7 +18,9 @@ const userSchema = new mongoose.Schema({
     blocked_reason :{type: String, default: null},
     score : { type : Number, enum : [1 , 2 , 3 , 4 , 5], default: 1 },
     deleted : {type: Boolean, default: false},
-    deletedAt: { type: Date, default: null }
+    deletedAt: { type: Date, default: null },
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+    
 },{
     timestamps : true,
     versionKey: false

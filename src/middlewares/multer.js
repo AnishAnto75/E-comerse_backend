@@ -50,3 +50,5 @@ export const uploadCategoryImage = createUpload("categories", 1);
 export const uploadBrandImage = createUpload("brands", 1);
 
 export const uploadProductImage = createUpload("products", 6);
+
+export const uploadStaffImage = createUpload("staff", 1);

@@ -113,7 +113,9 @@ const orderSchema = mongoose.Schema({
             reviewed_at: {type: Date}
         },
         default: undefined
-    }
+    },
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+
 },{
     timestamps : true
 })

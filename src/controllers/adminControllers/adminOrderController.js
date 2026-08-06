@@ -31,6 +31,45 @@ export const fetchAdminOrder = async(req , res)=>{
 
 
 
+ //old
+export const adminUpdateOrderToCancel = async(req , res)=>{
+    try {
+        const {id} = req.params
+        const staff_id = req.user._id
+
+        const reason_for_cancel = req.body.data?.reason_for_cancel
+        if(!reason_for_cancel){return apiErrorResponce(res, "Invalid Credentials")}
+
+        const order = await Order.findOne({order_id : id})
+        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
+
+        if(order.order_status.delivered.status){return apiErrorResponce(res, "Can't cancel the because the order is already delivered")}
+        if(order.order_status.canceled.status){return apiErrorResponce(res, "Order Is Already Canceled")}
+
+        order.order_status.canceled.status = true
+        order.order_status.canceled.date = new Date()
+        order.order_status.canceled.canceled_by = 'staff'
+        order.order_status.canceled.canceled_staff_id = staff_id
+        order.order_status.canceled.reason_for_cancel = reason_for_cancel
+        await order.save()
+    
+        return apiSucessResponce(res , "Order Canceled", order.order_status )
+
+    } catch (error) {
+        console.log("error in updateOrderStatusToCanceled controller : " ,error)
+        return apiErrorResponce(res , "internal server error" , null , 500)
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 // old code
@@ -136,34 +175,6 @@ export const updateOrderStatusToDelivered = async(req , res)=>{
     }
 }
 
-export const updateOrderStatusToCanceled = async(req , res)=>{
-    try {
-        const {id} = req.params
-        const staff_id = req.body.user._id
-
-        const reason_for_cancel = req.body.data?.reason_for_cancel
-        if(!reason_for_cancel){return apiErrorResponce(res, "Invalid Credentials")}
-
-        const order = await Order.findOne({order_id : id})
-        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
-
-        if(order.order_status.delivered.status){return apiErrorResponce(res, "Can't cancel the because the order is already delivered")}
-        if(order.order_status.canceled.status){return apiErrorResponce(res, "Order Is Already Canceled")}
-
-        order.order_status.canceled.status = true
-        order.order_status.canceled.date = new Date()
-        order.order_status.canceled.canceled_by = 'staff'
-        order.order_status.canceled.canceled_staff_id = staff_id
-        order.order_status.canceled.reason_for_cancel = reason_for_cancel
-        await order.save()
-    
-        return apiSucessResponce(res , "Order Canceled", order.order_status )
-
-    } catch (error) {
-        console.log("error in updateOrderStatusToCanceled controller : " ,error)
-        return apiErrorResponce(res , "internal server error" , null , 500)
-    }
-}
 
 export const adminFetchDeliveryStaffByNameForOrderStatus = async(req, res)=>{
     try {

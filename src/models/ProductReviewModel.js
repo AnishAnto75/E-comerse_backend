@@ -11,6 +11,8 @@ const productReviewSchema = mongoose.Schema({
         hidden : {type: Boolean, default: false},
         deleted : {type: Boolean, default: false},
     }],
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+    
 },{ timestamps : true }
 )
 

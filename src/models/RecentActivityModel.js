@@ -49,7 +49,7 @@ const recentActivitySchema = new mongoose.Schema({
         ],
         required: true
     },
-    metadata: { type: mongoose.Schema.Types.Mixed,default: {}}
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {}}
 
 }, { timestamps: true });
 

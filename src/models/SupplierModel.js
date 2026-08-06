@@ -37,7 +37,9 @@ const supplierSchema = mongoose.Schema({
     total_orders: { type: Number, default: 0},
     last_purchase_date: { type: Date, default: null },
     status: { type: String, enum : ['active', 'inactive'], default: "active" },
-    deleted: { type: Boolean, default: false }
+    deleted: { type: Boolean, default: false },
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+    
 },{timestamps:true})
 
 supplierSchema.index({

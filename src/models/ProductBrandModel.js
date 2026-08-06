@@ -18,7 +18,9 @@ const productBrandSchema = mongoose.Schema({
         user_id : { type: mongoose.SchemaTypes.ObjectId, ref: "User" , required: true },
         review : { type: String, required: true }
     }],
-    deleted : { type:Boolean, default:false}
+    deleted : { type:Boolean, default:false},
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+
 },{timestamps:true})
 
 productBrandSchema.index(

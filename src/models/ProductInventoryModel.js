@@ -18,9 +18,11 @@ const productInventorySchema = mongoose.Schema({
         other_expenses : { type : Number, required: true, min: 0 },
         unit_purchase_cost : { type : Number, required: true, min: 0 },              // with gst and other expenses
         selling_price: { type : Number, required: true, min: 0 },
+        history: { type: mongoose.Schema.Types.Mixed, default: {}}
     },{
         timestamps: true
     }],
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
 },{ timestamps : true }
 )
 
