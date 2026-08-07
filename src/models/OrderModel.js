@@ -9,7 +9,6 @@ const orderSchema = mongoose.Schema({
     total_amount : {type : Number, required : true, min: 200},
     total_gst: { type: Number, required: true, min: 1 },
     total_quantity : {type : Number , required : true, min: 1},
-    OTP : {type : Number , default: ""},
     coupon: {
         type: {
             code: { type: String, default: "" },
@@ -75,6 +74,7 @@ const orderSchema = mongoose.Schema({
             default: undefined
         }
     },
+    delivery_otp : {type : "String" , default: ""},
     current_status: { type: String, enum: [ "placed", "confirmed", "out", "delivered", "cancelled" ], default: "placed" },
     order_status: {
         placed:{

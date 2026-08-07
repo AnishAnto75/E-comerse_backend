@@ -6,7 +6,7 @@ import verifyUser from "../middlewares/verifyUser.js";
 import { adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProduct, adminFetchProductByCategory, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminCreateStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminBlockUser, adminFetchAllCustomer, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
-import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToConfirmed, updateOrderStatusToOut, updateOrderStatusToDelivered, adminFetchDeliveryStaffByNameForOrderStatus, adminFetchDeliveryStaffByIdForOrderStatus, adminFetchForOrderPage, fetchAdminOrderByIdForOrderPage, adminUpdateOrderToCancel } from "../controllers/adminControllers/adminOrderController.js";
+import { fetchAllOrders, fetchAdminOrder, updateOrderStatusToDelivered, adminFetchDeliveryStaffByIdForOrderStatus, adminFetchForOrderPage, fetchAdminOrderByIdForOrderPage, adminUpdateOrderToCancel, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminUpdateOrderOut } from "../controllers/adminControllers/adminOrderController.js";
 
 import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
@@ -50,10 +50,14 @@ router.get('/purchase/create-purchase/search-products/' , verifyUser, adminSearc
 
 // Orders
 router.get('/order/order_id/:order_id' , verifyUser, fetchAdminOrder )
+router.patch('/order/update/confirmed/:order_id' , verifyUser, adminConfirmOrder )
+router.get('/order/get_staff/out/:term' , verifyUser, adminFetchDeliveryStaffForOut )
+router.patch("/order/update/out/:order_id", verifyUser, adminUpdateOrderOut );
 
 
 // Staff
 router.post('/staff/create' , verifyUser, uploadStaffImage.single("photo"), adminCreateStaff )
+
 
 
 
@@ -122,10 +126,7 @@ router.get('/staff/:id' , verifyUser, verifingAdmin, adminFetchStaff )
 //Orders
 router.get('/order/all-order' , verifyUser, fetchAllOrders )
 router.get('/order/order_id/:order_id' , verifyUser, verifingAdmin, fetchAdminOrder )
-router.patch('/order/update/confirmed/:id' , verifyUser, verifingAdmin, updateOrderStatusToConfirmed )
-router.patch('/order/update/out/:id' , verifyUser, verifingAdmin, updateOrderStatusToOut )
 router.patch('/order/update/delivered/:id' , verifyUser, verifingAdmin, updateOrderStatusToDelivered )
-router.get('/order/get_staff/out/:username' , verifyUser, verifingAdmin, adminFetchDeliveryStaffByNameForOrderStatus )
 router.get('/order/get_staff/out/id/:id' , verifyUser, verifingAdmin, adminFetchDeliveryStaffByIdForOrderStatus )
 router.get('/order/order-page' , verifyUser, verifingAdmin, adminFetchForOrderPage )
 router.get('/order/order-page/search/:order_id' , verifyUser, verifingAdmin, fetchAdminOrderByIdForOrderPage )

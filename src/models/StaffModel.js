@@ -44,20 +44,25 @@ const staffSchema = mongoose.Schema({
         pincode: { type: String, required: true, trim: true }
     } ,
     joining_date: {type: Date, required: true},
-    status: {type: String, enum: [ "active" , "inactive" ], default: "active"},
-    created_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", immutable: true,},
-    deleted: {type: Boolean, default: false},
-    deleted_at: {type: Date, default: null},
+
     password_created: { type: Boolean, default: false },
     password_created_at: { type: Date, default: null },
     password_setup_otp: {
         code: { type: String, select: false },
         expires_at: {type: Date, select: false}
     },
+    
     last_login: {type: Date, default: null},
+    
     login_attempts: { type: Number, default: 0},
     lock_until: { type: Date, default: null },
-    history: [{ type: mongoose.Schema.Types.Mixed, default: {}}]
+
+    history: [{ type: mongoose.Schema.Types.Mixed, default: {}}],
+    
+    created_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", immutable: true,},
+    status: {type: String, enum: [ "active" , "inactive" ], default: "active"},
+    deleted: {type: Boolean, default: false},
+    deleted_at: {type: Date, default: null},
     
 },{
     timestamps : true ,
