@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const supplierSchema = mongoose.Schema({
     supplier_id : {type: String, unique: true, trim: true, required: true},
     supplier_name : {type: String, required: true, trim: true},
+    supplier_phone : {type: String, required: true, trim: true, default: ''},
     supplier_contact_person : {type: String, trim: true, default: ''},
     supplier_contact_person_phone : {type: String, trim: true, default: ''},
     supplier_email : {type: String, trim: true, lowercase: true, default: '', 
@@ -13,7 +14,6 @@ const supplierSchema = mongoose.Schema({
             message: "Invalid email"
         }
     },
-    supplier_phone : {type: String, required: true, trim: true, default: ''},
     supplier_gst_no : {type: String, uppercase: true, trim: true, default: ''},
     supplier_address : {
         landmark : {type: String,trim: true, default: ""},

@@ -4,20 +4,65 @@ import Staff from "../../models/StaffModel.js"
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
 import Transaction from "../../models/TransactionModel.js"
 
-
-export const fetchAllAdminOrder = async(req , res)=>{
+export const adminFetchOrderPage = async (req, res) => {
     try {
-        const order = await Order.find()
 
-        if(!order){
-            throw new Error("Internal Server Error")
-        }
-        apiSucessResponce(res , "Orders Fetched Sucessfully" , order)
+        // Pending order counts
+        const pendingOrders = await Order.aggregate([
+            { $match: { current_status: { $in: ["placed", "confirmed", "out"] } } },
+            {
+                $group: {
+                    _id: null,
+                    placed: { $sum: { $cond: [ { $eq: ["$current_status", "placed"] }, 1, 0]}},
+                    confirmed: { $sum: { $cond: [ { $eq: ["$current_status", "confirmed"] }, 1 , 0 ]}},
+                    out: { $sum: { $cond: [ { $eq: ["$current_status", "out"] }, 1, 0 ]}}
+                }
+            }
+        ]);
+
+        const pendingOrderData = pendingOrders[0] || {
+            placed: 0,
+            confirmed: 0,
+            out: 0
+        };
+
+        // Recent orders
+        const orders = await Order.find({ current_status: { $in: ["placed", "confirmed", "out", "delivered", "cancelled"] } })
+        .select(` 
+            _id
+            order_id
+            total_amount
+            total_quantity
+            delivery_address.name
+            delivery_address.phone_number
+            payment.method
+            payment.status
+            current_status
+            rating.score
+            createdAt
+        `).sort({ createdAt: -1 }).limit(10).lean();
+
+        const data = {
+            pendingOrders: [
+                {
+                    name: "Pending Orders",
+                    placed: pendingOrderData.placed,
+                    confirmed: pendingOrderData.confirmed,
+                    out: pendingOrderData.out
+                }
+            ],
+            orders
+        };
+
+
+        return apiSucessResponce( res, "order data successfully.", data, 200)
+
     } catch (error) {
-        console.log("error in fetchAllAdminOrder controller : " ,error)
-        apiErrorResponce(res , "Internal Server Error" , null , 500)
+        console.error( "Error in adminFetchOrderPage:", error );
+        return apiErrorResponce( res, "Internal Server Error", null, 500 );
     }
-}
+};
+
 export const fetchAdminOrder = async(req , res)=>{
     try {
         const {order_id} = req.params
@@ -269,4 +314,17 @@ export const adminCancelOrder = async (req, res) => {
 };
 
 
-// no old codes
+// testing controllers
+export const fetchAllAdminOrder = async(req , res)=>{
+    try {
+        const order = await Order.find()
+
+        if(!order){
+            throw new Error("Internal Server Error")
+        }
+        apiSucessResponce(res , "Orders Fetched Sucessfully" , order)
+    } catch (error) {
+        console.log("error in fetchAllAdminOrder controller : " ,error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}

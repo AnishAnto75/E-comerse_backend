@@ -107,7 +107,7 @@ const orderSchema = mongoose.Schema({
         }
     },
     rating: {
-        type: { 
+        type: {
             score: { type : Number,  min: 1, max: 5 },
             review: { type : String, maxlength: 1000, trim: true },
             reviewed_at: {type: Date}

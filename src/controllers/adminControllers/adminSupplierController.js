@@ -77,6 +77,72 @@ export const createSupplier = async (req, res) => {
     } finally { session.endSession() }
 };
 
+export const adminFetchSupplierPage = async (req, res) => {
+
+    try {
+
+        const [ supplierStats, suppliers ] = await Promise.all([
+
+            Supplier.aggregate([
+                { $match: { deleted: false } },
+                {
+                    $group: {
+                        _id: null,
+                        total_suppliers: { $sum: 1 },
+                        active_suppliers: { $sum: { $cond: [ { $eq: ["$status", "active"] }, 1, 0 ]}},
+                        inactive_suppliers: { $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0 ]}}
+                    }
+                }
+            ]),
+
+            Supplier.find({ deleted: false })
+            .select(`
+                _id
+                supplier_id
+                supplier_name
+                supplier_phone
+                supplier_contact_person
+                supplier_contact_person_phone
+                supplier_email
+                supplier_gst_no
+                supplier_address.city
+                status
+            `).sort({ createdAt: -1 }).lean()
+        ]);
+
+        const stats = supplierStats[0] || {
+            total_suppliers: 0,
+            active_suppliers: 0,
+            inactive_suppliers: 0
+        };
+
+
+        const data = {
+            total_suppliers: stats.total_suppliers,
+            active_suppliers: stats.active_suppliers,
+            inactive_suppliers: stats.inactive_suppliers,
+            suppliers
+        };
+
+
+        return apiSucessResponce( res, "Supplier dashboard data fetched successfully.", data, 200 )
+
+    } catch (error) {
+        console.error( "Error in adminFetchSupplierPage:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500 );
+    }
+};
+
+export const adminFetchSupplier = async(req,res)=>{
+    try {
+        const {id} = req.params
+        const supplier = await Supplier.findOne({supplier_id : id, deleted: false})
+        return apiSucessResponce(res, "Supplier Found Successfully", supplier)
+    } catch (error){
+        console.log("error in adminFetchSupplier controller" , error)
+        return apiErrorResponce(res , "internal Server Error")
+    }
+}
 
 
 
@@ -97,47 +163,7 @@ export const createSupplier = async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-// export const adminCreateSupplier = async(req,res)=>{
-//     try {
-//         const {data} = req.body
-//         if(!data){return apiErrorResponce(res, "invalid credentials")}
-//         const {supplier_name, supplier_contact_person, supplier_contact_person_phone, supplier_email, supplier_phone, supplier_gst_no, supplier_address, supplier_bank_details } = data
-
-//         if(!supplier_name){return apiErrorResponce(res, "invalid credentials")}
-
-//         const supplier_id = `SUP${generateRandom10DigitNumber()}`
-
-//         const formatedData = {
-//             supplier_id,
-//             supplier_name,
-//             supplier_contact_person,
-//             supplier_contact_person_phone,
-//             supplier_email,
-//             supplier_phone,
-//             supplier_gst_no,
-//             supplier_address,
-//             supplier_bank_details
-//         }
-
-//         const supplier = new Supplier(formatedData)
-//         await supplier.save()
-
-//         return apiSucessResponce(res , "Supplier created sucessfully" , supplier)
-
-//     } catch (error) {
-//         console.log("error in create supplier controller :" , error)
-//         return apiErrorResponce(res, "Internal Server Error" )
-//     }
-// }
-
-
+// old code
 export const adminFetchAllSuppliers = async(req,res)=>{
     try {
         const suppliers = await Supplier.find()
@@ -150,13 +176,3 @@ export const adminFetchAllSuppliers = async(req,res)=>{
 
 
 
-export const adminFetchSupplier = async(req,res)=>{
-    try {
-        const {id} = req.params
-        const supplier = await Supplier.findOne({supplier_id : id})
-        return apiSucessResponce(res, "Supplier Found Successfully", supplier)
-    } catch (error){
-        console.log("error in adminFetchSupplier controller" , error)
-        return apiErrorResponce(res , "internal Server Error")
-    }
-}
