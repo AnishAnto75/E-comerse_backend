@@ -2,8 +2,22 @@ import mongoose from "mongoose"
 import Order from "../../models/OrderModel.js"
 import Staff from "../../models/StaffModel.js"
 import { apiErrorResponce, apiSucessResponce } from "../../utils/apiResponce.js"
+import Transaction from "../../models/TransactionModel.js"
 
 
+export const fetchAllAdminOrder = async(req , res)=>{
+    try {
+        const order = await Order.find()
+
+        if(!order){
+            throw new Error("Internal Server Error")
+        }
+        apiSucessResponce(res , "Orders Fetched Sucessfully" , order)
+    } catch (error) {
+        console.log("error in fetchAllAdminOrder controller : " ,error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}
 export const fetchAdminOrder = async(req , res)=>{
     try {
         const {order_id} = req.params
@@ -76,7 +90,7 @@ export const adminFetchDeliveryStaffForOut = async (req, res) => {
     }
 };
 
-export const adminUpdateOrderOut = async (req, res) => {
+export const adminOutOrder = async (req, res) => {
     try {
         const { order_id } = req.params;
         const { delivery_staff_id } = req.body;
@@ -86,7 +100,6 @@ export const adminUpdateOrderOut = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(delivery_staff_id)) { return apiErrorResponce(res, "Invalid delivery staff.") }
 
         const deliveryStaff = await Staff.findOne({ _id: delivery_staff_id, department: "delivery", status: "active", deleted: false }).select("_id");
-
         if (!deliveryStaff) { return apiErrorResponce(res, "Delivery staff not found.") }
 
         const delivery_otp = Math.floor(100000 + Math.random() * 900000);
@@ -116,131 +129,144 @@ export const adminUpdateOrderOut = async (req, res) => {
     }
 };
 
+export const adminDeliverOrder = async (req, res) => {
+    const session = await mongoose.startSession();
 
-
-
-
-
-
-
-
-
- //old
-export const adminUpdateOrderToCancel = async(req , res)=>{
     try {
-        const {id} = req.params
-        const staff_id = req.user._id
+        const { order_id } = req.params;
+        const { delivery_otp } = req.body;
+        const staffId = req.user?._id;
 
-        const reason_for_cancel = req.body.data?.reason_for_cancel
-        if(!reason_for_cancel){return apiErrorResponce(res, "Invalid Credentials")}
+        if (!order_id?.trim()) { return apiErrorResponce(res, "Order ID is required.", 400) }
+        if (!delivery_otp?.trim()) { return apiErrorResponce(res, "Delivery OTP is required.", 400) }
+        if (!staffId) { return apiErrorResponce( res, "Delivery staff authentication required.", 401 ) }
 
-        const order = await Order.findOne({order_id : id})
-        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
+        session.startTransaction();
 
-        if(order.order_status.delivered.status){return apiErrorResponce(res, "Can't cancel the because the order is already delivered")}
-        if(order.order_status.canceled.status){return apiErrorResponce(res, "Order Is Already Canceled")}
+        const staff = await Staff.findOne({ _id: staffId, deleted: false, department: "delivery" }).select("_id name role").session(session);
+        if (!staff) { await session.abortTransaction(); return apiErrorResponce( res, "Invalid delivery staff.", 403 ) }
 
-        order.order_status.canceled.status = true
-        order.order_status.canceled.date = new Date()
-        order.order_status.canceled.canceled_by = 'staff'
-        order.order_status.canceled.canceled_staff_id = staff_id
-        order.order_status.canceled.reason_for_cancel = reason_for_cancel
-        await order.save()
-    
-        return apiSucessResponce(res , "Order Canceled", order.order_status )
+        const order = await Order.findOne({ order_id: order_id.trim() }).session(session);
 
-    } catch (error) {
-        console.log("error in updateOrderStatusToCanceled controller : " ,error)
-        return apiErrorResponce(res , "internal server error" , null , 500)
-    }
-}
+        if (!order) { await session.abortTransaction(); return apiErrorResponce( res, "Order not found.", 404 ) }
+        if (order.current_status !== "out") { await session.abortTransaction(); return apiErrorResponce( res, `Order cannot be delivered because its status is "${order.current_status}".`, 400 ) }
 
+        const assignedStaff = order.order_status?.out?.taken_by;
+        if (!assignedStaff) { await session.abortTransaction(); return apiErrorResponce( res, "No delivery staff has been assigned to this order.", 400 ) }
+        if (assignedStaff.toString() !== staff._id.toString() ) { await session.abortTransaction(); return apiErrorResponce( res, "This order is assigned to another delivery staff.", 403) }
 
-export const fetchAllOrders = async(req , res)=>{
-    try {
-        const orders = await Order.find()
-        apiSucessResponce(res , "All Orders Fetched" , orders)
-    } catch (error) {
-        console.log("error in fetchAllOrders controller : " ,error)
-        apiErrorResponce(res , "Internal Server Error" , null , 500)
-    }
-}
+        if (!order.delivery_otp) { await session.abortTransaction(); return apiErrorResponce( res, "Delivery OTP is not available for this order.", 400 ) }
+        if (order.delivery_otp !== delivery_otp.trim()) { await session.abortTransaction(); return apiErrorResponce( res, "Invalid delivery OTP.", 400);}
 
-export const updateOrderStatusToDelivered = async(req , res)=>{
-    try {
-        const {id} = req.params
-        const staff_id = req.body.user._id
+        const deliveredAt = new Date();
 
-        const order = await Order.findOne({order_id : id})
+        order.current_status = "delivered";
+        order.order_status.delivered = {
+            status: true,
+            date: deliveredAt,
+            delivered_by: staff._id,
+            otp_verified: true
+        };
 
-        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
-        if(order.order_status.canceled.status){return apiErrorResponce(res, "Order Is Canceled")}
-        if(!order.order_status.confirmed.status){return apiErrorResponce(res, "Order Is Not Yet Confirmed")}
-        if(!order.order_status.out.status){return apiErrorResponce(res, "Order Is Not Yet Out for Delivery")}
-        if(order.order_status.delivered.status){return apiErrorResponce(res, "Order Is Already Delivered")}
+        order.delivery_otp = "";
 
-        order.order_status.delivered.status = true
-        order.order_status.delivered.date = new Date()
-        order.order_status.delivered.delivered_by = staff_id
-        await order.save()
+        if (order.payment.method === "COD") {
 
-        return apiSucessResponce(res , "Order Delivered", order.order_status )
+            order.payment.status = "Paid";
+            order.payment.paid_at = deliveredAt;
 
-    } catch (error) {
-        console.log("error in updateOrderStatusToDelivered controller : " ,error)
-        return apiErrorResponce(res , "internal server error" , null , 500)
-    }
-}
+            const transaction = new Transaction({
+                type: "income",
+                category: "Sales",
+                title: `Sale - Order ${order.order_id}`,
+                amount: order.total_amount,
+                payment_method: "Cash",
+                reference_no: order.order_id,
+                order_id: order._id,
+                notes: "COD payment collected on delivery.",
+                transaction_date: deliveredAt,
+            });
 
-export const adminFetchDeliveryStaffByIdForOrderStatus = async(req, res)=>{
-    try {
-        const { id } = req.params;
-        const deliveryStaffs = await Staff.findOne({staff_id : id , staff_type:"delivery", blocked: false, deleted: false}).select(['staff_id', 'staff_username']).limit(10)
-        return apiSucessResponce(res, "Delivery Staff Found", deliveryStaffs)
-    } catch (error) {
-        console.log("error in adminFetchDeliveryStaffByIdForOrderStatus controller" , error)
-        return apiErrorResponce(res , "internal Server Error")
-    }
-}
-
-export const adminFetchForOrderPage = async(req , res)=>{
-    try {
-        const orders = await Order.find().sort({ createdAt: -1 }).populate([{ path: ["user_id"], select:["email", "name"], strictPopulate: false }]).select(["order_id", "user_id", "order_status", "total_amount", "total_no_of_product", "createdAt" ])
-
-        const pending_orders = orders.filter((order)=> !order.order_status.delivered.status && !order.order_status.canceled.status)
-
-        const findDate = (date)=>{
-            const a  = new Date(date)
-            const b  = new Date()
-            const createdDate = `${a.getDate()}-${a.getMonth()}-${a.getFullYear()}`
-            const TodayDate = `${b.getDate()}-${b.getMonth()}-${b.getFullYear()}`
-            return createdDate == TodayDate
-        }
-        const todays_order = orders.filter((order)=>findDate(order.order_status.placed.date))
-
-        const data = { 
-            total_orders : orders?.length,
-            orders: orders,
-            pending_orders : pending_orders.length,
-            todays_order: todays_order.length
+            await transaction.save({ session });
         }
 
-        return apiSucessResponce(res , "Fetched Successfully" , data)
-    } catch (error) {
-        console.log("error in adminFetchForOrderPage controller : " ,error)
-        return apiErrorResponce(res , "Internal Server Error" , null , 500)
-    }
-}
+        await order.save({ session });
+        await session.commitTransaction();
+        return apiSucessResponce( res, "Order delivered successfully.", order, 200);
 
-export const fetchAdminOrderByIdForOrderPage = async(req , res)=>{
+    } catch (error) {
+        if (session.inTransaction()) { await session.abortTransaction() }
+        console.log( "Error in adminDeliverOrder controller:", error);
+        return apiErrorResponce( res, "Internal Server Error", null, 500);
+    } finally { await session.endSession() }
+};
+
+export const adminCancelOrder = async (req, res) => {
+
+    const session = await mongoose.startSession();
+
     try {
-        const {order_id} = req.params
-        const order = await Order.findOne({order_id}).populate([{ path: ["user_id"], select:["name"], strictPopulate: false }]).select(["order_id", "user_id", "order_status", "total_amount", "total_no_of_product", "createdAt" ]).limit(15)
 
-        return apiSucessResponce(res , "Order Fetched Successfully" , order)
+        const { order_id } = req.params;
+        const { reason } = req.body;
+        const staffId = req.user?._id;
+
+        if (!order_id?.trim()) { return apiErrorResponce( res, "Order ID is required.", 400 ) }
+        if (!staffId) { return apiErrorResponce( res, "Staff authentication required.", 401 ) }
+        if (!reason?.trim()) { return apiErrorResponce( res, "Cancellation reason is required.", 400 ) }
+        if ( reason.trim().length > 500 ) { return apiErrorResponce( res, "Cancellation reason cannot exceed 500 characters.", 400) }
+
+        session.startTransaction();
+
+        const staff = await Staff.findOne({ _id: staffId, deleted: false, status: "active" }) .select("_id name department role").session(session)
+        if (!staff) { await session.abortTransaction(); return apiErrorResponce( res, "Invalid or inactive staff.", 403 ) }
+
+        const order = await Order.findOne({ order_id: order_id.trim() }).session(session);
+
+        if (!order) { await session.abortTransaction(); return apiErrorResponce( res, "Order not found.", 404 )}
+        if (order.current_status === "cancelled") { await session.abortTransaction(); return apiErrorResponce( res, "Order is already cancelled.", 400 )}
+        if (order.current_status === "delivered") { await session.abortTransaction(); return apiErrorResponce( res, "Delivered orders cannot be cancelled.",400) }
+
+        if (order.current_status === "out") {
+            const assignedStaff = order.order_status?.out?.taken_by;
+            if (!assignedStaff) { await session.abortTransaction(); return apiErrorResponce( res, "No delivery staff is assigned to this order.", 400 ) }
+            if ( staff.department === "delivery" && assignedStaff.toString() !== staff._id.toString() ) { await session.abortTransaction(); return apiErrorResponce( res, "This order is assigned to another delivery staff.", 403 )}
+        }
+
+        if ( !["placed", "confirmed", "out"].includes(order.current_status)) { await session.abortTransaction(); return apiErrorResponce( res, `Order cannot be cancelled because its status is "${order.current_status}".`,400 )}
+
+        order.current_status = "cancelled";
+
+        order.order_status.cancelled = {
+            status: true,
+            date: new Date(),
+            cancelled_by: "staff",
+            cancelled_staff_id: staff._id,
+            reason: reason.trim()
+        };
+
+        order.delivery_otp = "";
+
+        if ( order.payment.method !== "COD" && order.payment.status === "Paid" ) {
+            order.payment.refund = {
+                amount: order.total_amount,
+                status: "Pending",
+                transaction_id: ""
+            };
+        }
+
+        await order.save({ session });
+        await session.commitTransaction();
+        return apiSucessResponce( res, "Order cancelled successfully.", order, 200 )
 
     } catch (error) {
-        console.log("Error in fetchAdminOrderById controller : " ,error)
-        return apiErrorResponce(res , "Internal Server Error" , null , 500)
+        if (session.inTransaction()) { await session.abortTransaction();}
+        console.error( "Error in adminCancelOrder:", error);
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
+    } finally {
+        await session.endSession();
     }
-}
+};
+
+
+// no old codes
