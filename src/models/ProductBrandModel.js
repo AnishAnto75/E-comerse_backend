@@ -10,6 +10,7 @@ const productBrandSchema = mongoose.Schema({
         },
         required: true,
     },
+    brand_average_ratings:{ type:Number, default:0, min:0, max:5 },
     brand_ratings : [{
         user_id : { type: mongoose.SchemaTypes.ObjectId, ref: "User" , required: true },
         rating : { type : Number, enum : [1 , 2 , 3 , 4 , 5], required: true }

@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 
 const productReviewSchema = mongoose.Schema({
     product_id: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true, unique: true},
-    product_average_ratings:{ type:Number, default:0, min:0, max:5 },
+    product_average_ratings:{ type:Number, default:1, min:1, max:5 },
     product_total_reviews:{ type:Number, default: 0 },
     product_user_review : [{
         user_id : { type: mongoose.SchemaTypes.ObjectId, ref: "User" , required: true },
@@ -11,7 +11,8 @@ const productReviewSchema = mongoose.Schema({
         hidden : {type: Boolean, default: false},
         deleted : {type: Boolean, default: false},
     }],
-    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+    history: { type: mongoose.Schema.Types.Mixed, default: {}},
+    deleted : { type:Boolean, default: false},
     
 },{ timestamps : true }
 )

@@ -26,7 +26,7 @@ const productSchema = mongoose.Schema({
     ],
     product_description : { type : String, default: null },
     product_highlights:{ type:[String], default:[] },
-    product_added_by : { type : mongoose.SchemaTypes.ObjectId, ref: "User", required: true },
+    product_added_by : { type : mongoose.SchemaTypes.ObjectId, ref: "Staff", required: true },
     product_varient : [{
         product_id : { type: mongoose.SchemaTypes.ObjectId, ref: 'Product', required: true },
         varient_name : { type: String, required: true }

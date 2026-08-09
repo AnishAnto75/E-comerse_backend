@@ -22,7 +22,8 @@ const productInventorySchema = mongoose.Schema({
     },{
         timestamps: true
     }],
-    history: { type: mongoose.Schema.Types.Mixed, default: {}}
+    history: { type: mongoose.Schema.Types.Mixed, default: {}},
+    deleted : { type:Boolean, default: false},
 },{ timestamps : true }
 )
 

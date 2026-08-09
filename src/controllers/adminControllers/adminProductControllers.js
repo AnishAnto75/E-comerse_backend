@@ -10,6 +10,249 @@ import ProductReview from "../../models/ProductReviewModel.js"
 import RecentActivity from "../../models/RecentActivityModel.js"
 
 
+export const adminFetchProductPage = async (req, res) => {
+
+    try {
+
+        const page = Math.max( parseInt(req.query.page) || 1, 1);
+        const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 );
+        const skip = (page - 1) * limit;
+
+        const summaryResult = await Product.aggregate([
+            { $match: { deleted: false } },
+            { $lookup: {
+                from: "productinventories",
+                localField: "_id",
+                foreignField: "product_id",
+                as: "inventory"
+            }},
+            { $unwind: { path: "$inventory", preserveNullAndEmptyArrays: true}},
+            { $group: {
+                _id: null,
+                total_products: { $sum: 1 },
+                active_products: { $sum: { $cond: [ { $eq: ["$status", "active"] }, 1, 0 ] } },
+                inactive_products: { $sum: { $cond: [ { $eq: ["$status", "inactive"] }, 1, 0 ] } },
+                out_of_stock: { $sum: { $cond: [ { $eq: ["$out_of_stock", true] }, 1, 0 ]}},
+                low_in_stock: {
+                    $sum: { $cond: [ { $and: [
+                        { $gt: [ { $ifNull: [ "$inventory.product_total_stock", 0 ] }, 0 ]},
+                        { $lte: [{ $ifNull: [ "$inventory.product_total_stock", 0 ] }, { $ifNull: ["$inventory.product_low_in_stock", 1 ]}]}
+                    ]}, 1, 0 ]}
+                }
+            }},
+            { $project: {
+                _id: 0,
+                total_products: 1,
+                active_products: 1,
+                inactive_products: 1,
+                low_in_stock: 1,
+                out_of_stock: 1,
+            }}
+        ]);
+
+        const summary = summaryResult[0] || {
+            total_products: 0,
+            active_products: 0,
+            inactive_products: 0,
+            low_in_stock: 0,
+            out_of_stock: 0,
+        };
+
+        const products = await Product.aggregate([
+
+            { $match: { deleted: false} },
+            { $sort: { createdAt: -1 } },
+            { $skip: skip },
+            { $limit: limit },
+            { $lookup: {
+                from: "productinventories",
+                localField: "_id",
+                foreignField: "product_id",
+                as: "inventory"
+            }},
+            { $unwind: { path: "$inventory", preserveNullAndEmptyArrays: true }},
+            { $lookup: {
+                from: "productgroups",
+                localField: "product_group",
+                foreignField: "_id",
+                as: "group"
+            }},
+            { $unwind: { path: "$group", preserveNullAndEmptyArrays: true }},
+            { $lookup: {
+                from: "productcategories",
+                localField: "product_category",
+                foreignField: "_id",
+                as: "category"
+            }},
+            { $unwind: { path: "$category", preserveNullAndEmptyArrays: true}},
+            { $lookup: {
+                from: "productbrands",
+                localField: "product_brand",
+                foreignField: "_id",
+                as: "brand"
+            }},
+            { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true }},
+            { $lookup: {
+                from: "productreviews",
+                localField: "product_review_id",
+                foreignField: "_id",
+                as: "review"
+            }},
+            { $unwind: { path: "$review", preserveNullAndEmptyArrays: true }},
+            { $project: {
+                _id: 1,
+                product_name: 1,
+                product_barcode: 1,
+                group_name: "$group.group_name",
+                category_name: "$category.category_name",
+                product_brand: "$brand.brand_name",
+                product_photo: "$product_photo.url",
+                current_stock: { $ifNull: [ "$inventory.product_total_stock", 0 ]},
+                product_low_in_stock: { $ifNull: [ "$inventory.product_low_in_stock", 1 ]},
+                product_average_ratings: { $ifNull: [ "$review.product_average_ratings", 0] },
+                status: 1,
+                out_of_stock: 1,
+                createdAt: 1
+            }},
+        ]);
+
+        return apiSucessResponce( res, "Product dashboard data fetched successfully.", { summary, products }, 200 );
+    } catch (error) {
+        console.error( "Error in adminProductDashboardData:", error );
+        return apiErrorResponce( res, "Internal Server Error", null, 500 );
+    }
+};
+
+export const adminFetchProduct = async (req, res) => {
+    try {
+
+        const { barcode } = req.params;
+
+        if (!barcode?.trim()) { return apiErrorResponce( res, "Product barcode is required", null, 400 )}
+
+        const product = await Product.aggregate([
+            { $match: {
+                product_barcode: barcode.trim(),
+                deleted: false
+            }},
+            { $lookup: {
+                from: "productinventories",
+                localField: "_id",
+                foreignField: "product_id",
+                as: "inventory"
+            }},
+            { $unwind: { path: "$inventory", preserveNullAndEmptyArrays: true }},
+
+            { $lookup: {
+                from: "productgroups",
+                localField: "product_group",
+                foreignField: "_id",
+                as: "group"
+            }},
+            { $unwind: { path: "$group", preserveNullAndEmptyArrays: true }},
+
+            { $lookup: {
+                from: "productcategories",
+                localField: "product_category",
+                foreignField: "_id",
+                as: "category"
+            }},
+            { $unwind: { path: "$category", preserveNullAndEmptyArrays: true }},
+
+            { $lookup: {
+                from: "productbrands",
+                localField: "product_brand",
+                foreignField: "_id",
+                as: "brand"
+            }},
+            { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true }},
+
+            { $lookup: {
+                from: "productreviews",
+                localField: "product_review_id",
+                foreignField: "_id",
+                as: "review"
+            }},
+            { $unwind: { path: "$review", preserveNullAndEmptyArrays: true }},
+
+            { $lookup: {
+                from: "users",
+                localField: "product_added_by",
+                foreignField: "_id",
+                as: "added_by"
+            }},
+            { $unwind: { path: "$added_by", preserveNullAndEmptyArrays: true }},
+
+            {
+                $project: {
+                    _id: 1,
+                    product_barcode: 1,
+                    product_name: 1,
+                    product_UOM: 1,
+                    product_net_unit: 1,
+                    product_min_order_quantity: 1,
+                    product_max_order_quantity: 1,
+                    product_hsn_code: 1,
+                    product_photo: "$product_photo.url",
+                    product_additional_photos: "$product_additional_photos.url",
+                    product_description: 1,
+                    product_highlights: 1,
+                    product_varient: 1,
+                    faqs: 1,
+                    out_of_stock: 1,
+                    status: 1,
+                    createdAt: 1,
+                    updatedAt: 1,
+                    latest_batch_details: 1,
+                    inventory: {
+                        _id: "$inventory._id",
+                        product_low_in_stock: { $ifNull: ["$inventory.product_low_in_stock", 1] },
+                        product_total_stock: { $ifNull: ["$inventory.product_total_stock", 0] },
+                        product_stock: { $ifNull: ["$inventory.product_stock", []] }
+                    },
+                    review: {
+                        _id: "$review._id",
+                        product_average_ratings: { $ifNull: ["$review.product_average_ratings", 0] },
+                        product_total_reviews: { $ifNull: ["$review.product_total_reviews", 0] },
+                    },
+                    group: {
+                        _id: "$group._id",
+                        group_name: "$group.group_name",
+                        deleted: "$group.deleted"
+                    },
+                    category: {
+                        _id: "$category._id",
+                        category_name: "$category.category_name",
+                        deleted: "$category.deleted",
+                    },
+                    brand: {
+                        _id: "$brand._id",
+                        brand_name: "$brand.brand_name",
+                        brand_logo: "$brand.brand_logo.url",
+                        brand_average_ratings: { $ifNull: ["$brand.brand_average_ratings", 0] },
+                        deleted: "$brand.deleted",
+                    },
+                    added_by: {
+                        staff_id: "$added_by.staff_id",
+                        name: "$added_by.name",
+                        photo: "$added_by.photo.url",
+                        deleted: "$added_by.deleted",
+                    }
+                }
+            },
+            { $limit: 1 }
+        ]);
+
+        if (!product.length) { return apiErrorResponce( res, "Product not found", null, 404 )}
+
+        return apiSucessResponce( res, "Product fetched successfully.", product[0], 200 )
+
+    } catch (error) {
+        console.error( "Error in adminFetchProduct:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500)
+    }
+}
+
 export const adminFetchForCreateProductPage = async(req,res)=>{
     try {
 
@@ -141,6 +384,8 @@ export const createProduct = async(req , res)=>{
     } finally { session.endSession() }
 }
 
+
+// testing controller
 export const adminFetchAllProduct = async(req,res)=>{
     try {
         const products = await Product.find({deleted : false})
@@ -208,27 +453,6 @@ export const adminFetchForProductPage = async(req, res)=>{
         return apiSucessResponce(res, "All Products Fetched SuccessFully", data)
     } catch (error) {
         console.log("error in fetchAllProduct controller" , error)
-        return apiErrorResponce(res , "internal Server Error")
-    }
-}
-
-
-export const adminFetchProduct = async(req,res)=>{
-    try {
-        const {id} = req.params
-        const product = await Product.findOne({product_barcode : id})
-        .populate({ path: ["product_brand"], strictPopulate: false })
-        .populate({ path: ["product_inventory_id"], strictPopulate: false })
-        .populate({ path: ["product_category"], strictPopulate: false })
-        .populate({ path: ["product_group"], strictPopulate: false })
-        .populate({ path: ["product_review_id"], strictPopulate: false })
-
-        if(!product){
-            return apiErrorResponce(res, "Product Not Found", 404)
-        }
-        return apiSucessResponce(res, "Product Found Successfully", product)
-    } catch (error) {
-        console.log("error in adminFetchProduct controller" , error)
         return apiErrorResponce(res , "internal Server Error")
     }
 }

@@ -11,7 +11,7 @@ const productCategorySchema = mongoose.Schema({
         },
         required: true,
     },
-    deleted : { type:Boolean, default:false},
+    deleted : { type:Boolean, default: false},
     history: { type: mongoose.Schema.Types.Mixed, default: {}}
 
 },{timestamps:true})

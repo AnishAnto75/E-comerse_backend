@@ -3,7 +3,7 @@ import express from "express";
 import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
-import { adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProduct, adminFetchProductByCategory, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
+import { adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProduct, adminFetchProductByCategory, adminFetchProductPage, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminCreateStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
 import { adminBlockUser, adminFetchAllCustomer, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
@@ -24,10 +24,12 @@ router.get('/dashboard', adminDashboardData)
 
 
 // product 
+router.get('/product/product_page', adminFetchProductPage)
+router.get('/product/product_id/:barcode', adminFetchProduct)
 router.get('/product/fetch-for-create-product', adminFetchForCreateProductPage)
 router.get('/product/fetch-categories-for-create-product/:id', adminFetchCategoriesForCreateProductPage)
 router.post('/product/add-product' , verifyUser, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
-router.get('/product/all' , verifyUser, adminFetchAllProduct)
+router.get('/product/all' , verifyUser, adminFetchAllProduct)                   // testing controller
 
 
 // groups
