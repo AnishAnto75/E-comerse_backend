@@ -8,7 +8,7 @@ import { adminCreateStaff, adminFetchAllStaffs, adminFetchStaff } from "../contr
 import { adminBlockUser, adminFetchAllCustomer, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
 
-import {createProductGroup, fetchAllProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
+import { adminFetchGroupCategoryPage, createProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminFetchAllSuppliers, adminFetchSupplier, adminFetchSupplierPage, createSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
@@ -18,6 +18,7 @@ import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductI
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
 
 const router = express.Router()
+
 
 // dashboard
 router.get('/dashboard', adminDashboardData)
@@ -29,11 +30,12 @@ router.get('/product/product_id/:barcode', adminFetchProduct)
 router.get('/product/fetch-for-create-product', adminFetchForCreateProductPage)
 router.get('/product/fetch-categories-for-create-product/:id', adminFetchCategoriesForCreateProductPage)
 router.post('/product/add-product' , verifyUser, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
-router.get('/product/all' , verifyUser, adminFetchAllProduct)                   // testing controller
+router.get('/product/all' , verifyUser, adminFetchAllProduct)                           // testing controller
 
 
 // groups
 router.post('/product-group/create-group', uploadGroupImage.single("group_image"), createProductGroup)
+router.get('/product-group/groups_categories_page', verifyUser, adminFetchGroupCategoryPage )
 
 
 // category
@@ -42,6 +44,8 @@ router.post('/product-category/create-category', uploadCategoryImage.single("cat
 
 // brands
 router.post('/brand/create-brand', uploadBrandImage.single("brand_logo"), createProductBrand)
+router.get('/brand/brand_page', verifyUser, fetchAllBrand )
+router.get('/brand/brand_id/:id', verifyUser, fetchBrand)
 
 
 // Supplier
@@ -81,7 +85,6 @@ router.post('/staff/create' , verifyUser, uploadStaffImage.single("photo"), admi
 
 
 
-
 // old
 
 
@@ -94,10 +97,6 @@ router.get('/customer/block/customer_id/:user_id' , verifyUser, verifingAdmin,  
 router.get('/customer/unBlock/customer_id/:user_id' , verifyUser, verifingAdmin,  adminUnBlockUser )
 
 
-// ProductGroup
-router.get('/product-group/all-groups' , verifyUser , verifingAdmin, fetchAllProductGroup)
-
-
 // ProductCategory
 router.get('/product-category/all-categories' , verifyUser , verifingAdmin, fetchAllProductCategory)
 router.get('/product-category/group-id/:id' , verifyUser , verifingAdmin, fetchCategoriesByGroup)
@@ -105,7 +104,6 @@ router.get('/product-category/group-id/:id' , verifyUser , verifingAdmin, fetchC
 
 //ProductBrand
 router.get('/brand/brand-id/:id', verifyUser, verifingAdmin, fetchBrand )
-router.get('/brand/all-brand', verifyUser, verifingAdmin, fetchAllBrand )
 router.get('/brand/search' , verifyUser, verifingAdmin, adminSearchBrand)
 router.post('/brand/edit/:id' , verifyUser, verifingAdmin, adminEditBrand )
 

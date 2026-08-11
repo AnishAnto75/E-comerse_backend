@@ -10,31 +10,24 @@ const productBrandSchema = mongoose.Schema({
         },
         required: true,
     },
-    brand_average_ratings:{ type:Number, default:0, min:0, max:5 },
-    brand_ratings : [{
-        user_id : { type: mongoose.SchemaTypes.ObjectId, ref: "User" , required: true },
-        rating : { type : Number, enum : [1 , 2 , 3 , 4 , 5], required: true }
-    }],
-    brand_review : [{
-        user_id : { type: mongoose.SchemaTypes.ObjectId, ref: "User" , required: true },
-        review : { type: String, required: true }
+    brand_average_ratings:{ type:Number, default:1, min:1, max:5 },
+    brand_total_reviews: { type: Number, default: 0, min: 0 },
+    brand_reviews: [{
+        user_id: { type: mongoose.SchemaTypes.ObjectId, ref: "User", required: true },
+        rating: { type: Number, min: 1, max: 5, required: true },
+        review: { type: String, trim: true, default: "" },
+        hidden: { type: Boolean, default: false },
+        deleted: { type: Boolean, default: false }
     }],
     deleted : { type:Boolean, default:false},
     history: { type: mongoose.Schema.Types.Mixed, default: {}}
-
 },{timestamps:true})
 
 productBrandSchema.index(
-    {
-        brand_name: 1,deleted: 1,
-    },
-    {
-        unique: true,
-    }
-);
-
-productBrandSchema.index({createdAt: -1});
+    { brand_name: 1, deleted: 1 },
+    { unique: true }
+)
+productBrandSchema.index({createdAt: -1})
 
 const ProductBrand = mongoose.model ("ProductBrand", productBrandSchema)
-
 export default ProductBrand
