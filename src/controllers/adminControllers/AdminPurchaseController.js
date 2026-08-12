@@ -10,6 +10,87 @@ import Transaction from "../../models/TransactionModel.js"
 import RecentActivity from "../../models/RecentActivityModel.js"
 
 
+export const adminFetchPurchasePage = async (req, res) => {
+    try {
+        const page = Math.max( parseInt(req.query.page) || 1, 1 )
+        const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
+        const skip = (page - 1) * limit;
+
+        const summary = await Purchase.aggregate([
+            { $match: { deleted: false }},
+            { $group: {
+                _id: null,
+                total_purchases: { $sum: 1 },
+                pending_purchases: { $sum: { $cond: [{ $eq: ["$payment_status", "Pending"] }, 1, 0 ]}},
+                partially_paid_purchases: { $sum: { $cond: [{ $eq: ["$payment_status", "Partial"] },1, 0 ]}}
+            }},
+            { $project: {
+                _id: 0,
+                total_purchases: 1,
+                pending_purchases: 1,
+                partially_paid_purchases: 1
+            }}
+        ]);
+
+        const purchases = await Purchase.aggregate([
+            { $match: { deleted: false }},
+            { $sort: { createdAt: -1 }},
+            { $skip: skip },
+            { $limit: limit },
+            { $lookup: {
+                from: "suppliers",
+                localField: "supplier_id",
+                foreignField: "_id",
+                as: "supplier"
+            }},
+            { $unwind: { path: "$supplier", preserveNullAndEmptyArrays: true }},
+            { $project: {
+                _id: 0,
+                purchase_id: 1,
+                supplier: {
+                    _id: "$supplier._id",
+                    supplier_id: "$supplier.supplier_id",
+                    supplier_name: "$supplier.supplier_name",
+                    supplier_phone: "$supplier.supplier_phone"
+                },
+                supplier_invoice_no: 1,
+                invoice_date: 1,
+                delivery_date: 1,
+                grand_total: 1,
+                balance_amount: 1,
+                payment_status: 1,
+                total_items: { $size: { $ifNull: ["$products", []]}}
+            }}
+        ])
+
+        const totalPurchases = summary[0]?.total_purchases || 0;
+        const totalPages = Math.ceil( totalPurchases / limit )
+
+        const data = {
+            summary: {
+                total_purchases: totalPurchases,
+                pending_purchases: summary[0]?.pending_purchases || 0,
+                partially_paid_purchases: summary[0]?.partially_paid_purchases || 0
+            },
+            purchases,
+            pagination: {
+                current_page: page,
+                limit,
+                total_purchases: totalPurchases,
+                total_pages: totalPages,
+                has_next_page: page < totalPages,
+                has_previous_page: page > 1
+            }
+        }
+
+        return apiSucessResponce( res, "Purchase page fetched successfully", data, 200);
+
+    } catch (error) {
+        console.error( "Error in adminFetchPurchasePage:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
+    }
+};
+
 export const adminCreatePurchase = async(req, res)=>{
 
     const session = await mongoose.startSession();
@@ -65,9 +146,9 @@ export const adminCreatePurchase = async(req, res)=>{
             if( sellingPrice > mrp) { await session.abortTransaction(); return apiErrorResponce(res, `${product.product_name}: Selling price cannot exceed MRP`);}
             if( item.manufacture_date && item.expiry_date && new Date(item.expiry_date) <= new Date(item.manufacture_date)) { await session.abortTransaction(); return apiErrorResponce(res, `${product.product_name}: Expiry date must be after manufacture date`) }
 
-            const lineAmount = round(quantity * purchaseCost);
-            const gstValue = round((lineAmount * gst)/100);
-            const lineTotal = round( lineAmount + gstValue + (otherExpenses * quantity) );
+            const lineAmount = quantity * purchaseCost
+            const gstValue = (lineAmount * gst)/100
+            const lineTotal = round( lineAmount + gstValue + ( otherExpenses * quantity ));
 
             gstAmount += gstValue;
             subTotal += lineTotal;

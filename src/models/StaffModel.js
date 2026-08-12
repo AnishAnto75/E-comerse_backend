@@ -4,7 +4,7 @@ const staffSchema = mongoose.Schema({
     staff_id: {type: String, required: true, unique: true, immutable: true, index: true},
     name: {type: String, required: true, trim: true},
     email: { type: String, unique: true, lowercase: true, trim: true, sparse: true, default: undefined },
-    gender: {type: String, enum: ["male", "female", "other"], required: true},
+    gender: {type: String, enum: ["male", "female", "others"], required: true},
     password: {type: String, default: null, select: false},
     department: { type: String,  enum: [ "sales", "inventory", "delivery", "administration" ], message: '{VALUE} is not supported', required:true },
     role: { type: String, enum: ["delivery", "staff", "bpo", "assistant_manager","manager", "general_manager", "admin" ], message: '{VALUE} is not supported', required : true},
@@ -60,9 +60,12 @@ const staffSchema = mongoose.Schema({
     history: [{ type: mongoose.Schema.Types.Mixed, default: {}}],
     
     created_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", immutable: true,},
-    status: {type: String, enum: [ "active" , "inactive" ], default: "active"},
+    status: {type: String, enum: [ "active" , "inactive" , "blocked" ], default: "active"},
+    blocked_at: {type: Date, default: null},
+    blocked_reason :{type: String, default: null},
+
     deleted: {type: Boolean, default: false},
-    deleted_at: {type: Date, default: null},
+    history: { type: mongoose.Schema.Types.Mixed, default: {}}
     
 },{
     timestamps : true ,

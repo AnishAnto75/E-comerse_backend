@@ -49,7 +49,7 @@ export const fetchBrand = async(req, res)=>{
     }
 }
 
-export const fetchAllBrand = async (req, res) => {
+export const fetchBrandPage = async (req, res) => {
     try {
         const page = Math.max( parseInt(req.query.page) || 1, 1 )
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )

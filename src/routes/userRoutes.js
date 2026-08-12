@@ -2,7 +2,7 @@ import express from "express";
 
 import verifyUser from "../middlewares/verifyUser.js";
 import { fetchProducts } from "../controllers/clientControllers/productController.js";
-import { addToCart, fetchCart, fetchFullCart, minusToCart, removeProductFromCart } from "../controllers/clientControllers/cartController.js";
+import { addToCart, fetchCartSummary, fetchFullCart, minusToCart, removeProductFromCart } from "../controllers/clientControllers/cartController.js";
 import { addAddress, deleteAddress, fetchAddress } from "../controllers/clientControllers/addressController.js";
 import { createOrder, getAllOrder, getOrder } from "../controllers/clientControllers/orderController.js";
 
@@ -14,7 +14,7 @@ router.get('/product' , fetchProducts)
 
 
 // cart
-router.get('/cart' , verifyUser , fetchCart)
+router.get('/cart/summary' , verifyUser , fetchCartSummary)
 router.post('/cart/add' , verifyUser , addToCart)
 router.post('/cart/minus' , verifyUser , minusToCart)
 router.post('/cart/remove' , verifyUser , removeProductFromCart)

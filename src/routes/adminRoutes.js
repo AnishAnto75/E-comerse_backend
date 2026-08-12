@@ -4,16 +4,16 @@ import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
 import { adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProduct, adminFetchProductByCategory, adminFetchProductPage, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
-import { adminCreateStaff, adminFetchAllStaffs, adminFetchStaff } from "../controllers/adminControllers/adminStaffController.js";
-import { adminBlockUser, adminFetchAllCustomer, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
+import { adminCreateStaff, adminFetchAllStaffs, adminFetchPreviewStaff, adminFetchStaff, adminFetchStaffPage } from "../controllers/adminControllers/adminStaffController.js";
+import { adminBlockUser, adminFetchAllCustomer, adminFetchCustomerPreviewPage, adminFetchCustomersPage, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
 
 import { adminFetchGroupCategoryPage, createProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminFetchAllSuppliers, adminFetchSupplier, adminFetchSupplierPage, createSupplier } from "../controllers/adminControllers/adminSupplierController.js";
-import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
+import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminFetchPurchasePage, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
 import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGroupsByNameForCreateBanner, adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners, fetchBanner, hideBanner } from "../controllers/adminControllers/adminBannerController.js";
-import { createProductBrand , fetchAllBrand, adminEditBrand, fetchBrand, adminSearchBrand} from "../controllers/adminControllers/adminProductBrandController.js";
+import { createProductBrand , adminEditBrand, fetchBrand, adminSearchBrand, fetchBrandPage} from "../controllers/adminControllers/adminProductBrandController.js";
 import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductImage, uploadStaffImage } from "../middlewares/multer.js";
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
 
@@ -44,7 +44,7 @@ router.post('/product-category/create-category', uploadCategoryImage.single("cat
 
 // brands
 router.post('/brand/create-brand', uploadBrandImage.single("brand_logo"), createProductBrand)
-router.get('/brand/brand_page', verifyUser, fetchAllBrand )
+router.get('/brand/brand_page', verifyUser, fetchBrandPage )
 router.get('/brand/brand_id/:id', verifyUser, fetchBrand)
 
 
@@ -55,6 +55,7 @@ router.get('/supplier/supplier_id/:id', verifyUser , adminFetchSupplier)
 
 
 // Purchase
+router.get( "/purchase/purchase_page", verifyUser, adminFetchPurchasePage )
 router.post('/purchase/create-purchase' , verifyUser, adminCreatePurchase)
 router.get('/purchase/create-purchase/fetch-supplier/' , verifyUser, adminSearchSuppliersForCreatePurchase)
 router.get('/purchase/create-purchase/search-products/' , verifyUser, adminSearchProductsForCreatePurchase)
@@ -73,6 +74,13 @@ router.patch("/order/update/cancel/:order_id" , verifyUser, adminCancelOrder )
 
 // Staff
 router.post('/staff/create' , verifyUser, uploadStaffImage.single("photo"), adminCreateStaff )
+router.get('/staff/staff_page' , verifyUser, adminFetchStaffPage )
+router.get('/staff/staff_preview_page/:staff_id' , verifyUser, adminFetchPreviewStaff )
+
+
+// Customers
+router.get('/customer/customer_page' , verifyUser, adminFetchCustomersPage )
+router.get('/customer/customer_preview_page/:user_id' , verifyUser, adminFetchCustomerPreviewPage )
 
 
 

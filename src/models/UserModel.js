@@ -15,16 +15,18 @@ const userSchema = new mongoose.Schema({
         push: { type: Boolean, default: true}
     },
     status: { type: String, enum : ['active', 'inactive', 'blocked'], default: "active" },
+    blocked_at: {type: Date, default: null},
     blocked_reason :{type: String, default: null},
-    score : { type : Number, enum : [1 , 2 , 3 , 4 , 5], default: 1 },
+    score : { type : Number, min: 1 , max: 10 , default: 5 },
     deleted : {type: Boolean, default: false},
-    deletedAt: { type: Date, default: null },
     history: { type: mongoose.Schema.Types.Mixed, default: {}}
-    
 },{
     timestamps : true,
     versionKey: false
 })
+
+userSchema.index({ deleted: 1, status: 1, createdAt: -1 })
+userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true })
 
 const User = mongoose.model("User" , userSchema)
 export default User

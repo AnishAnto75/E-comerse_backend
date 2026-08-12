@@ -6,12 +6,8 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 
 import authRoutes from './routes/authRoutes.js'
-import productRoutes from './routes/productRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 import userRoutes from './routes/userRoutes.js'
-import cartRoutes from './routes/cartRoutes.js'
-import addressRoutes from './routes/addressRoutes.js'
-import orderRoutes from './routes/orderRoutes.js'
 
 const app = express()
 const PORT = process.env.PORT
@@ -32,10 +28,6 @@ app.get('/' , (req , res)=>{
 })
 
 app.use('/api/auth' , authRoutes)
-app.use('/api/product' , productRoutes)
-app.use('/api/cart' , cartRoutes)
-app.use('/api/address' , addressRoutes)
-app.use('/api/order' , orderRoutes)
 
 app.use('/api/admin' , adminRoutes)
 app.use('/api/user' , userRoutes)

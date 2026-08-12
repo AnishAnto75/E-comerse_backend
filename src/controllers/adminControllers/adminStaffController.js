@@ -102,7 +102,119 @@ export const adminCreateStaff = async (req, res) => {
         return apiErrorResponce( res, "Internal Server Error", error.message, 500 );
     }
 
-};
+}
+
+export const adminFetchStaffPage = async (req, res) => {
+    try {
+
+        const page = Math.max( parseInt(req.query.page) || 1, 1 )
+        const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
+        const skip = (page - 1) * limit;
+
+        const search = req.query.search?.trim() || "";
+        const status = req.query.status?.trim() || "";
+        const department = req.query.department?.trim() || "";
+        const role = req.query.role?.trim() || "";
+
+        const match = { deleted: false };
+
+        if (status) { match.status = status }
+        if (department) { match.department = department }
+        if (role) { match.role = role }
+        if (search) { match.$or = [
+            { staff_id: { $regex: search, $options: "i"}},
+            { name: { $regex: search, $options: "i" }},
+            { email: { $regex: search, $options: "i" }},
+            { phone_number: { $regex: search, $options: "i"}}
+        ]}
+
+        const summaryResult = await Staff.aggregate([
+            { $match: { deleted: false }},
+            { $group: {
+                _id: null,
+                total_employee: { $sum: 1 },
+                active_employee: { $sum: { $cond: [{ $eq: ["$status", "active"]}, 1, 0 ]}},
+                inactive_employee: { $sum: { $cond: [{ $eq: ["$status", "inactive"]}, 1, 0 ]}},
+                blocked_employee: { $sum: { $cond: [{ $eq: ["$status", "blocked"]}, 1, 0 ]}}}
+            },
+            { $project: {
+                _id: 0,
+                total_employee: 1,
+                active_employee: 1,
+                inactive_employee: 1,
+                blocked_employee: 1
+            }}
+        ])
+
+        const totalStaff = await Staff.countDocuments(match);
+        const totalPages = Math.ceil( totalStaff / limit )
+
+        const staffs = await Staff.find(match)
+            .select(` staff_id name email gender salary photo status department role phone_number DOB joining_date`)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        const data = {
+            summary: {
+                total_employee: summaryResult[0]?.total_employee || 0,
+                active_employee: summaryResult[0]?.active_employee || 0,
+                inactive_employee: summaryResult[0]?.inactive_employee || 0,
+                blocked_employee: summaryResult[0]?.blocked_employee || 0
+            },
+            staffs,
+            pagination: {
+                current_page: page,
+                limit,
+                total_staff: totalStaff,
+                total_pages: totalPages,
+                has_next_page: page < totalPages,
+                has_previous_page: page > 1
+            }
+        }
+
+        return apiSucessResponce( res, "Staff page fetched successfully", data, 200 )
+
+    } catch (error) {
+        console.error( "Error in adminFetchStaffPage:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
+    }
+}
+
+export const adminFetchPreviewStaff = async (req, res) => {
+    try {
+        const { staff_id } = req.params;
+        if (!staff_id?.trim()) { return apiErrorResponce( res, "Staff ID is required", null, 400 )}
+
+        const staff = await Staff.findOne({ staff_id: staff_id.trim(),deleted: false })
+            .select(` staff_id name email gender department role salary phone_number alternate_phone_number emergency_contact DOB photo qualification pancard_number aadhar_number status joining_date last_login blocked_at blocked_reason `)
+            .lean()
+
+        if (!staff) { return apiErrorResponce( res, "Staff not found", null, 404 )}
+
+        return apiSucessResponce( res, "Staff fetched successfully", staff, 200 )
+
+    } catch (error) {
+        console.error( "Error in adminFetchStaff:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

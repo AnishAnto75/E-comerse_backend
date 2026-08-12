@@ -121,11 +121,11 @@ export const removeProductFromCart = async (req, res) => {
     } 
 };
 
-export const fetchCart = async(req , res)=>{
+export const fetchCartSummary = async(req , res)=>{
     try {
 
         const cart = await Cart.findOne( { user_id: req.user._id }, { products: 1 } )
-        if (!cart) { return apiSucessResponce(res, "Success", { cartCount: 0, products: [] }) }
+        if (!cart) { return apiSucessResponce(res, "Success", { cartCount: 0, cart: [] }) }
 
         return apiSucessResponce(res, "Success", { cartCount: cart.products.length, cart: cart.products });
 

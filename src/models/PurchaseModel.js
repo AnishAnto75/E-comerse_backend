@@ -23,16 +23,17 @@ const purchaseSchema = mongoose.Schema({
         line_total: { type : Number, required: true ,min: 0 },
     }],
     payment_method: { type: String, enum: ["Cash", "UPI", "Card", "Bank Transfer", "Cheque", "Credit" ], default: "Cash"},
-    payment_status: { type: String, enum: ["Paid","Partial","Pending"], required: true},
+    payment_status: { type: String, enum: ["Paid", "Partial", "Pending"], required: true},
 
     sub_total_amount :  { type : Number, required: true },                  // with GST
     discount_received :  { type : Number, default: 0 },
     gst_amount :  { type : Number, required: true },
-    grand_total :  { type : Number, required: true },                      // final amount paid
+    grand_total :  { type : Number, required: true },                      // final amount to pay
     
     paid_amount: { type: Number, required:true },
-    balance_amount: {type: Number,required:true},
+    balance_amount: {type: Number, required:true},
     payment_date:{ type:Date, default:null},
+    
     added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff", required : true },
     deleted:{ type:Boolean, default:false},
     history: { type: mongoose.Schema.Types.Mixed, default: {}}

@@ -33,6 +33,7 @@ export const adminFetchOrderPage = async (req, res) => {
             order_id
             total_amount
             total_quantity
+            items.length
             delivery_address.name
             delivery_address.phone_number
             payment.method
