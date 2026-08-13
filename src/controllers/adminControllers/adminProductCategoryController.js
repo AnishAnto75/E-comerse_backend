@@ -40,8 +40,20 @@ export const createProductCategory = async(req, res)=>{
     }
 }
 
+export const adminFetchGroupsForCreateCategory = async(req, res)=>{
+    try {
+        const groups = await ProductGroup.find({ deleted: false })
+            .sort({ group_name: 1 })
+            .select(" group_name group_image.url _id")
+            .lean()
 
+        return apiSucessResponce(res , "Groups Fetched Sucessfully", groups, 201)
 
+    } catch (error) {
+        console.error("error in adminFetchGroupsForCreateCategory :" , error)
+        return apiErrorResponce(res, "internal server error", null, 500 )
+    }
+}
 
 
 

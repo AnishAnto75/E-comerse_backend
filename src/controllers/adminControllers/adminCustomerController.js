@@ -8,6 +8,11 @@ export const adminFetchCustomersPage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit
 
+        const status = req.query.status?.trim() != "all" ? req.query.status?.trim()  : "";
+
+        const match = { deleted: false };
+        if (status) { match.status = status }
+
         const summaryResult = await User.aggregate([
             { $match: { deleted: false }},
             { $group: {
@@ -33,10 +38,10 @@ export const adminFetchCustomersPage = async (req, res) => {
             blocked_customers: 0
         };
 
-        const totalCustomers = await User.countDocuments({ deleted: false })
+        const totalCustomers = await User.countDocuments(match)
         const totalPages = Math.ceil(totalCustomers / limit)
 
-        const customers = await User.find({ deleted: false})
+        const customers = await User.find( match )
             .select( "user_id email name gender DOB phoneNumber status score createdAt" )
             .sort({ createdAt: -1 })
             .skip(skip)

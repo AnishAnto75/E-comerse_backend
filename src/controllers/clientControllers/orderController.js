@@ -43,8 +43,8 @@ export const createOrder = async(req , res)=>{
 
         for (const cartItem of cart.products) {
 
-            const product = await Product.findOne({_id : cartItem.product_id , deleted : false , status: "active"})
-            .select("deleted status product_name product_barcode product_UOM product_photo product_min_order_quantity product_max_order_quantity current_stock out_of_stock")
+            const product = await Product.findOne({_id : cartItem.product_id , deleted : false , status: "active", out_of_stock: false})
+            .select("deleted status product_name product_barcode product_UOM product_photo product_min_order_quantity product_max_order_quantity current_stock")
             .session(session)
             if (!product) {throw new Error(`Product not found.`) }
             
@@ -92,7 +92,6 @@ export const createOrder = async(req , res)=>{
             await inventory.save({ session });
             
             product.current_stock = inventory.product_total_stock
-            product.out_of_stock = inventory.product_total_stock <= 0
             await product.save({ session });
         }
 

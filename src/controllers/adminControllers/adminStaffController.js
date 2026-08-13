@@ -111,22 +111,15 @@ export const adminFetchStaffPage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit;
 
-        const search = req.query.search?.trim() || "";
-        const status = req.query.status?.trim() || "";
-        const department = req.query.department?.trim() || "";
-        const role = req.query.role?.trim() || "";
+        const status = req.query.status?.trim() != "all" ? req.query.status?.trim()  : "";
+        const department = req.query.department?.trim() != "all" ? req.query.department?.trim() : "";
+        const gender = req.query.gender?.trim() != "all" ? req.query.gender?.trim()  : "";
 
         const match = { deleted: false };
 
         if (status) { match.status = status }
         if (department) { match.department = department }
-        if (role) { match.role = role }
-        if (search) { match.$or = [
-            { staff_id: { $regex: search, $options: "i"}},
-            { name: { $regex: search, $options: "i" }},
-            { email: { $regex: search, $options: "i" }},
-            { phone_number: { $regex: search, $options: "i"}}
-        ]}
+        if (gender) { match.gender = gender }
 
         const summaryResult = await Staff.aggregate([
             { $match: { deleted: false }},

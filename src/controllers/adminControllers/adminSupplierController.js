@@ -78,60 +78,73 @@ export const createSupplier = async (req, res) => {
 };
 
 export const adminFetchSupplierPage = async (req, res) => {
-
     try {
+        const page = Math.max( parseInt(req.query.page) || 1, 1)
+        const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
+        const skip = (page - 1) * limit;
 
-        const [ supplierStats, suppliers ] = await Promise.all([
+        const status = req.query.status?.trim();
 
+        const match = { deleted: false }
+        if (status && status !== "all") {
+            if (!["active", "inactive"].includes(status)) { return apiErrorResponce( res, "Invalid supplier status",null, 400 )}
+            match.status = status;
+        }
+
+        const [ summaryResult, suppliers, totalSuppliers ] = await Promise.all([
             Supplier.aggregate([
-                { $match: { deleted: false } },
-                {
-                    $group: {
-                        _id: null,
-                        total_suppliers: { $sum: 1 },
-                        active_suppliers: { $sum: { $cond: [ { $eq: ["$status", "active"] }, 1, 0 ]}},
-                        inactive_suppliers: { $sum: { $cond: [{ $eq: ["$status", "inactive"] }, 1, 0 ]}}
-                    }
-                }
+                { $match: { deleted: false }},
+                { $group: {
+                    _id: null,
+                    total_suppliers: { $sum: 1 },
+                    active_suppliers: {$sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0 ]}},
+                    inactive_suppliers: { $sum: { $cond: [ { $eq: ["$status", "inactive"] }, 1, 0 ]}}
+                }},
+                { $project: {
+                    _id: 0,
+                    total_suppliers: 1,
+                    active_suppliers: 1,
+                    inactive_suppliers: 1
+                }}
             ]),
 
-            Supplier.find({ deleted: false })
-            .select(`
-                _id
-                supplier_id
-                supplier_name
-                supplier_phone
-                supplier_contact_person
-                supplier_contact_person_phone
-                supplier_email
-                supplier_gst_no
-                supplier_address.city
-                status
-            `).sort({ createdAt: -1 }).lean()
+            Supplier.find(match)
+                .select(` _id supplier_id supplier_name supplier_phone supplier_contact_person supplier_contact_person_phone supplier_email supplier_gst_no supplier_address.city status`)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .lean(),
+
+            Supplier.countDocuments(match)
         ]);
 
-        const stats = supplierStats[0] || {
+        const summary = summaryResult[0] || {
             total_suppliers: 0,
             active_suppliers: 0,
             inactive_suppliers: 0
         };
 
+        const totalPages = Math.ceil(totalSuppliers / limit);
 
         const data = {
-            total_suppliers: stats.total_suppliers,
-            active_suppliers: stats.active_suppliers,
-            inactive_suppliers: stats.inactive_suppliers,
-            suppliers
-        };
-
-
+            summary,
+            suppliers,
+            pagination: {
+                current_page: page,
+                limit,
+                total_suppliers: totalSuppliers,
+                total_pages: totalPages,
+                has_next_page: page < totalPages,
+                has_previous_page: page > 1
+            }
+        }
         return apiSucessResponce( res, "Supplier dashboard data fetched successfully.", data, 200 )
-
     } catch (error) {
+
         console.error( "Error in adminFetchSupplierPage:", error )
-        return apiErrorResponce( res, "Internal Server Error", null, 500 );
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
     }
-};
+}
 
 export const adminFetchSupplier = async(req,res)=>{
     try {

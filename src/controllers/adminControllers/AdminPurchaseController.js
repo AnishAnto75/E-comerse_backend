@@ -16,6 +16,11 @@ export const adminFetchPurchasePage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit;
 
+        const payment_status = req.query.payment_status?.trim() != "all" ? req.query.payment_status?.trim()  : "";
+
+        const match = { deleted: false }
+        if (payment_status) { match.payment_status = payment_status }
+
         const summary = await Purchase.aggregate([
             { $match: { deleted: false }},
             { $group: {
@@ -33,7 +38,7 @@ export const adminFetchPurchasePage = async (req, res) => {
         ]);
 
         const purchases = await Purchase.aggregate([
-            { $match: { deleted: false }},
+            { $match: match },
             { $sort: { createdAt: -1 }},
             { $skip: skip },
             { $limit: limit },
@@ -63,12 +68,12 @@ export const adminFetchPurchasePage = async (req, res) => {
             }}
         ])
 
-        const totalPurchases = summary[0]?.total_purchases || 0;
+        const totalPurchases = await Purchase.countDocuments(match);
         const totalPages = Math.ceil( totalPurchases / limit )
 
         const data = {
             summary: {
-                total_purchases: totalPurchases,
+                total_purchases: summary[0]?.total_purchases || 0,
                 pending_purchases: summary[0]?.pending_purchases || 0,
                 partially_paid_purchases: summary[0]?.partially_paid_purchases || 0
             },
@@ -271,7 +276,6 @@ export const adminCreatePurchase = async(req, res)=>{
             await Product.updateOne( { _id: item.product_id },
                 { $set: {
                     current_stock: updatedTotalStock,
-                    out_of_stock: updatedTotalStock <= 0,
                     latest_batch_details: {
                         batch_no: item.batch_no,
                         size: item.size,

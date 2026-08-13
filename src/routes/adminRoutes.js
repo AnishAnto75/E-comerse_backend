@@ -9,7 +9,7 @@ import { adminBlockUser, adminFetchAllCustomer, adminFetchCustomerPreviewPage, a
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
 
 import { adminFetchGroupCategoryPage, createProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
-import { createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
+import { adminFetchGroupsForCreateCategory, createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminFetchAllSuppliers, adminFetchSupplier, adminFetchSupplierPage, createSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminFetchPurchasePage, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
 import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGroupsByNameForCreateBanner, adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners, fetchBanner, hideBanner } from "../controllers/adminControllers/adminBannerController.js";
@@ -35,11 +35,12 @@ router.get('/product/all' , verifyUser, adminFetchAllProduct)                   
 
 // groups
 router.post('/product-group/create-group', uploadGroupImage.single("group_image"), createProductGroup)
-router.get('/product-group/groups_categories_page', verifyUser, adminFetchGroupCategoryPage )
 
+router.get('/product-group/groups_categories_page', verifyUser, adminFetchGroupCategoryPage )
 
 // category
 router.post('/product-category/create-category', uploadCategoryImage.single("category_image"), createProductCategory)
+router.get('/product-category/fetch_groups_for_create', verifyUser, adminFetchGroupsForCreateCategory)
 
 
 // brands
@@ -73,9 +74,9 @@ router.patch("/order/update/cancel/:order_id" , verifyUser, adminCancelOrder )
 
 
 // Staff
-router.post('/staff/create' , verifyUser, uploadStaffImage.single("photo"), adminCreateStaff )
 router.get('/staff/staff_page' , verifyUser, adminFetchStaffPage )
 router.get('/staff/staff_preview_page/:staff_id' , verifyUser, adminFetchPreviewStaff )
+router.post('/staff/create' , verifyUser, uploadStaffImage.single("photo"), adminCreateStaff )
 
 
 // Customers

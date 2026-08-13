@@ -16,7 +16,12 @@ export const adminFetchProductPage = async (req, res) => {
 
         const page = Math.max( parseInt(req.query.page) || 1, 1);
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 );
-        const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit
+
+        const status = req.query.status?.trim() != "all" ? req.query.status?.trim()  : "";
+
+        const match = { deleted: false }
+        if (status) { match.status = status }
 
         const summaryResult = await Product.aggregate([
             { $match: { deleted: false } },
@@ -30,9 +35,7 @@ export const adminFetchProductPage = async (req, res) => {
             { $group: {
                 _id: null,
                 total_products: { $sum: 1 },
-                active_products: { $sum: { $cond: [ { $eq: ["$status", "active"] }, 1, 0 ] } },
-                inactive_products: { $sum: { $cond: [ { $eq: ["$status", "inactive"] }, 1, 0 ] } },
-                out_of_stock: { $sum: { $cond: [ { $eq: ["$out_of_stock", true] }, 1, 0 ]}},
+                out_of_stock: { $sum: { $cond: [{ $lte: [{ $ifNull: ["$inventory.product_total_stock", 0] }, 0 ]}, 1, 0]}},
                 low_in_stock: {
                     $sum: { $cond: [ { $and: [
                         { $gt: [ { $ifNull: [ "$inventory.product_total_stock", 0 ] }, 0 ]},
@@ -43,8 +46,6 @@ export const adminFetchProductPage = async (req, res) => {
             { $project: {
                 _id: 0,
                 total_products: 1,
-                active_products: 1,
-                inactive_products: 1,
                 low_in_stock: 1,
                 out_of_stock: 1,
             }}
@@ -60,7 +61,7 @@ export const adminFetchProductPage = async (req, res) => {
 
         const products = await Product.aggregate([
 
-            { $match: { deleted: false} },
+            { $match: match },
             { $sort: { createdAt: -1 } },
             { $skip: skip },
             { $limit: limit },
@@ -114,14 +115,32 @@ export const adminFetchProductPage = async (req, res) => {
                 out_of_stock: 1,
                 createdAt: 1
             }},
-        ]);
+        ])
 
-        return apiSucessResponce( res, "Product dashboard data fetched successfully.", { summary, products }, 200 );
+        const totalProducts = await Product.countDocuments(match)
+        const totalPages = Math.ceil( totalProducts / limit )
+
+        console.log({summary})
+
+        const data = {
+            summary, 
+            products,
+            pagination: {
+                current_page: page,
+                limit,
+                total_products: totalProducts,
+                total_pages: totalPages,
+                has_next_page: page < totalPages,
+                has_previous_page: page > 1
+            }
+        }
+
+        return apiSucessResponce( res, "Product dashboard data fetched successfully.", data, 200 );
     } catch (error) {
         console.error( "Error in adminProductDashboardData:", error );
         return apiErrorResponce( res, "Internal Server Error", null, 500 );
     }
-};
+}
 
 export const adminFetchProduct = async (req, res) => {
     try {

@@ -32,10 +32,6 @@ export const createProductGroup = async(req, res)=>{
 export const adminFetchGroupCategoryPage = async (req, res) => {
     try {
 
-        const page = Math.max( parseInt(req.query.page) || 1, 1 )
-        const limit = Math.min( Math.max(parseInt(req.query.limit) || 10, 1), 50 )
-        const skip = (page - 1) * limit;
-
         const summaryResult = await ProductGroup.aggregate([
             { $match: { deleted: false }},
             { $facet: {
@@ -80,8 +76,6 @@ export const adminFetchGroupCategoryPage = async (req, res) => {
         const groups = await ProductGroup.aggregate([
             { $match: { deleted: false }},
             { $sort: { createdAt: -1 }},
-            { $skip: skip },
-            { $limit: limit },
             { $lookup: {
                 from: "productcategories",
                 let: { groupId: "$_id" },
@@ -137,15 +131,7 @@ export const adminFetchGroupCategoryPage = async (req, res) => {
 
         const data = {
             summary,
-            groups,
-            pagination: {
-                page,
-                limit,
-                total_groups: summary.total_groups,
-                total_pages: Math.ceil(
-                    summary.total_groups / limit
-                )
-            }
+            groups
         }
 
         return apiSucessResponce( res, "Group and category data fetched successfully.", data, 200);

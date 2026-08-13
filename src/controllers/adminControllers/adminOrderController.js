@@ -7,6 +7,18 @@ import Transaction from "../../models/TransactionModel.js"
 export const adminFetchOrderPage = async (req, res) => {
     try {
 
+        const page = Math.max( parseInt(req.query.page) || 1, 1)
+        const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
+        const skip = (page - 1) * limit;
+
+        const status = req.query.status?.trim();
+
+        const match = { }
+        if (status && status !== "all") {
+            if (!["placed", "confirmed", "out", "delivered", "cancelled"].includes(status)) { return apiErrorResponce( res, "Invalid supplier status",null, 400 )}
+            match.current_status = status;
+        }
+
         // Pending order counts
         const pendingOrders = await Order.aggregate([
             { $match: { current_status: { $in: ["placed", "confirmed", "out"] } } },
@@ -18,30 +30,23 @@ export const adminFetchOrderPage = async (req, res) => {
                     out: { $sum: { $cond: [ { $eq: ["$current_status", "out"] }, 1, 0 ]}}
                 }
             }
-        ]);
-
+        ])
         const pendingOrderData = pendingOrders[0] || {
             placed: 0,
             confirmed: 0,
             out: 0
-        };
+        }
 
         // Recent orders
-        const orders = await Order.find({ current_status: { $in: ["placed", "confirmed", "out", "delivered", "cancelled"] } })
-        .select(` 
-            _id
-            order_id
-            total_amount
-            total_quantity
-            items.length
-            delivery_address.name
-            delivery_address.phone_number
-            payment.method
-            payment.status
-            current_status
-            rating.score
-            createdAt
-        `).sort({ createdAt: -1 }).limit(10).lean();
+        const orders = await Order.find(match)
+            .select(` _id order_id total_amount total_quantity items.length delivery_address.name delivery_address.phone_number payment.method payment.status current_status rating.score createdAt `)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean()
+
+        const totalOrders = await Order.countDocuments(match);
+        const totalPages = Math.ceil( totalOrders / limit )
 
         const data = {
             pendingOrders: [
@@ -52,9 +57,16 @@ export const adminFetchOrderPage = async (req, res) => {
                     out: pendingOrderData.out
                 }
             ],
-            orders
-        };
-
+            orders,
+            pagination: {
+                current_page: page,
+                limit,
+                total_orders: totalOrders,
+                total_pages: totalPages,
+                has_next_page: page < totalPages,
+                has_previous_page: page > 1
+            }
+        }
 
         return apiSucessResponce( res, "order data successfully.", data, 200)
 

@@ -54,8 +54,7 @@ const productSchema = mongoose.Schema({
         selling_price: { type : Number, default: 0 },
     },
     search_keywords: { type: [String], default: []},
-    out_of_stock : { type: Boolean, default: true },
-    status: { type: String, enum : ['active', 'inactive'], default: "active" },
+    status: { type: String, enum : ['active', 'inactive', 'out_of_stock'], default: "active" },
     deleted : {type: Boolean, default: false},
     history: { type: mongoose.Schema.Types.Mixed, default: {}}
     
