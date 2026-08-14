@@ -65,7 +65,6 @@ const staffSchema = mongoose.Schema({
     blocked_reason :{type: String, default: null},
 
     deleted: {type: Boolean, default: false},
-    history: { type: mongoose.Schema.Types.Mixed, default: {}}
     
 },{
     timestamps : true ,

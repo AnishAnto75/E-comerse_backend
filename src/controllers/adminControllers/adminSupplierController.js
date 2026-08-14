@@ -79,16 +79,28 @@ export const createSupplier = async (req, res) => {
 
 export const adminFetchSupplierPage = async (req, res) => {
     try {
+
         const page = Math.max( parseInt(req.query.page) || 1, 1)
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit;
 
-        const status = req.query.status?.trim();
+        const status = req.query.status?.trim()
+        const search = req.query.search?.trim()
 
         const match = { deleted: false }
         if (status && status !== "all") {
-            if (!["active", "inactive"].includes(status)) { return apiErrorResponce( res, "Invalid supplier status",null, 400 )}
+            if (!["active", "inactive"].includes(status)) { return }
             match.status = status;
+        }
+
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const searchRegex = { $regex: escapedSearch, $options: "i" }
+            match.$or = [
+                { supplier_id: searchRegex },
+                { supplier_name: searchRegex },
+                { supplier_phone: searchRegex }
+            ]
         }
 
         const [ summaryResult, suppliers, totalSuppliers ] = await Promise.all([

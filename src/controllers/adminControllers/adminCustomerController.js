@@ -8,10 +8,20 @@ export const adminFetchCustomersPage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit
 
-        const status = req.query.status?.trim() != "all" ? req.query.status?.trim()  : "";
+        const status = req.query.status?.trim()
+        const search = req.query.search?.trim()
 
         const match = { deleted: false };
-        if (status) { match.status = status }
+        if (status && status !== "all") { match.status = status }
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const searchRegex = { $regex: escapedSearch, $options: "i" }
+            match.$or = [
+                { user_id: searchRegex }, 
+                { email: searchRegex },
+                { phoneNumber: searchRegex }
+            ]
+        }
 
         const summaryResult = await User.aggregate([
             { $match: { deleted: false }},

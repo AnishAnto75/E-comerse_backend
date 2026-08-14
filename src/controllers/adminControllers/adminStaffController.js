@@ -93,13 +93,13 @@ export const adminCreateStaff = async (req, res) => {
             joining_date,
             created_by: req.user._id
 
-        });
+        })
 
-        return apiSucessResponce( res, "Staff created successfully.", staff, 201 );
+        return apiSucessResponce( res, "Staff created successfully.", staff, 201 )
 
     } catch (error) {
-        console.log("Error in createStaff controller:", error);
-        return apiErrorResponce( res, "Internal Server Error", error.message, 500 );
+        console.log("Error in createStaff controller:", error)
+        return apiErrorResponce( res, "Internal Server Error", error.message, 500 )
     }
 
 }
@@ -114,12 +114,23 @@ export const adminFetchStaffPage = async (req, res) => {
         const status = req.query.status?.trim() != "all" ? req.query.status?.trim()  : "";
         const department = req.query.department?.trim() != "all" ? req.query.department?.trim() : "";
         const gender = req.query.gender?.trim() != "all" ? req.query.gender?.trim()  : "";
+        const search = req.query.search?.trim()
 
         const match = { deleted: false };
 
         if (status) { match.status = status }
         if (department) { match.department = department }
         if (gender) { match.gender = gender }
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+            const searchRegex = { $regex: escapedSearch, $options: "i" }
+            match.$or = [
+                { staff_id: searchRegex }, 
+                { name: searchRegex }, 
+                { email: searchRegex },
+                { phone_number: searchRegex }
+            ]
+        }
 
         const summaryResult = await Staff.aggregate([
             { $match: { deleted: false }},

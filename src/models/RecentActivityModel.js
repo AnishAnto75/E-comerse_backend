@@ -49,7 +49,12 @@ const recentActivitySchema = new mongoose.Schema({
         ],
         required: true
     },
-    metadata: { type: mongoose.Schema.Types.Mixed, default: {}}
+    metadata : { type: mongoose.Schema.Types.Mixed, default: {}},
+    viewed: { type: Boolean, default: false},
+    viewed_at: {type: Date, default: null},
+    viewed_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff" },    
+    
+    deleted:{ type: Boolean, default: false},
 
 }, { timestamps: true });
 

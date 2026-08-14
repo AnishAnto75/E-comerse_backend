@@ -12,7 +12,6 @@ import { adminFetchGroupCategoryPage, createProductGroup} from '../controllers/a
 import { adminFetchGroupsForCreateCategory, createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminFetchAllSuppliers, adminFetchSupplier, adminFetchSupplierPage, createSupplier } from "../controllers/adminControllers/adminSupplierController.js";
 import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminFetchPurchasePage, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
-import { adminEditBanner, adminFetchCategoryByNameForCreateBanner, adminFetchGroupsByNameForCreateBanner, adminFetchProductsByBarcodeForCreateBanner, adminFetchProductsByNameForCreateBanner, createBanner, deleteBanner, fetchAllBanners, fetchBanner, hideBanner } from "../controllers/adminControllers/adminBannerController.js";
 import { createProductBrand , adminEditBrand, fetchBrand, adminSearchBrand, fetchBrandPage} from "../controllers/adminControllers/adminProductBrandController.js";
 import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductImage, uploadStaffImage } from "../middlewares/multer.js";
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
@@ -139,21 +138,6 @@ router.get('/purchase/purchase-id/:id' , verifyUser, verifingAdmin, adminFetchPu
 // Staff
 router.get('/staff/all-staff' , verifyUser, verifingAdmin, adminFetchAllStaffs )
 router.get('/staff/:id' , verifyUser, verifingAdmin, adminFetchStaff )
-
-
-
-// Banner
-router.post('/banner/create-banner', verifyUser, verifingAdmin, createBanner)
-router.get('/banner/create/product-name/:name', verifyUser, verifingAdmin, adminFetchProductsByNameForCreateBanner)
-router.get('/banner/create/product-barcode/:barcode', verifyUser, verifingAdmin, adminFetchProductsByBarcodeForCreateBanner)
-router.get('/banner/create/group-name/:name', verifyUser, verifingAdmin, adminFetchGroupsByNameForCreateBanner)
-router.get('/banner/create/category-name/:name', verifyUser, verifingAdmin, adminFetchCategoryByNameForCreateBanner)
-router.patch('/banner/edit-banner', verifyUser, verifingAdmin, adminEditBanner)
-router.get('/banner/all-banners', verifyUser, verifingAdmin, fetchAllBanners)
-router.get('/banner/banner_id/:banner_id', verifyUser, verifingAdmin, fetchBanner)
-router.patch('/banner/delete-banner/:id', verifyUser, verifingAdmin, deleteBanner)
-router.patch('/banner/hide-banner/:id', verifyUser, verifingAdmin, hideBanner)
-
 
 
 

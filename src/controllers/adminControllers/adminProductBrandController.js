@@ -54,19 +54,23 @@ export const fetchBrandPage = async (req, res) => {
         const page = Math.max( parseInt(req.query.page) || 1, 1 )
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit;
-        const filter = { 
-            deleted: false
-        };
+        const search = req.query.search?.trim()
+
+        const match = { deleted: false }
+        if (search) { 
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            match.brand_name = { $regex: escapedSearch, $options: "i" } 
+        }
 
         const [brands, totalBrands] = await Promise.all([
-            ProductBrand.find(filter)
+            ProductBrand.find(match)
                 .select( "brand_name brand_description brand_logo brand_average_ratings brand_total_reviews" )
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
-            ProductBrand.countDocuments(filter)
-        ]);
+            ProductBrand.countDocuments(match)
+        ])
         const totalPages = Math.ceil(totalBrands / limit);
 
         const data = { 
@@ -86,8 +90,7 @@ export const fetchBrandPage = async (req, res) => {
         console.error("Error in fetchAllBrand:", error);
         return apiErrorResponce( res, "Internal server error", null, 500 )
     }
-};
-
+}
 
 
 

@@ -11,13 +11,16 @@ export const adminFetchOrderPage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit;
 
-        const status = req.query.status?.trim();
+        const status = req.query.status?.trim()
+        const search = req.query.search?.trim()
 
         const match = { }
         if (status && status !== "all") {
             if (!["placed", "confirmed", "out", "delivered", "cancelled"].includes(status)) { return apiErrorResponce( res, "Invalid supplier status",null, 400 )}
             match.current_status = status;
         }
+
+        if (search) { match.order_id = { $regex: `^${search}`, $options: "i" } }
 
         // Pending order counts
         const pendingOrders = await Order.aggregate([
@@ -74,7 +77,7 @@ export const adminFetchOrderPage = async (req, res) => {
         console.error( "Error in adminFetchOrderPage:", error );
         return apiErrorResponce( res, "Internal Server Error", null, 500 );
     }
-};
+}
 
 export const fetchAdminOrder = async(req , res)=>{
     try {
@@ -146,7 +149,7 @@ export const adminFetchDeliveryStaffForOut = async (req, res) => {
         console.log("error in adminFetchDeliveryStaffForOut controller" , error)
         return apiErrorResponce(res , "internal Server Error", null, 500)
     }
-};
+}
 
 export const adminOutOrder = async (req, res) => {
     try {
@@ -185,7 +188,7 @@ export const adminOutOrder = async (req, res) => {
         console.error("Error in adminUpdateOrderOut:", error);
         return apiErrorResponce(res, "Internal Server Error", null, 500);
     }
-};
+}
 
 export const adminDeliverOrder = async (req, res) => {
     const session = await mongoose.startSession();
@@ -257,7 +260,7 @@ export const adminDeliverOrder = async (req, res) => {
         console.log( "Error in adminDeliverOrder controller:", error);
         return apiErrorResponce( res, "Internal Server Error", null, 500);
     } finally { await session.endSession() }
-};
+}
 
 export const adminCancelOrder = async (req, res) => {
 
@@ -324,8 +327,7 @@ export const adminCancelOrder = async (req, res) => {
     } finally {
         await session.endSession();
     }
-};
-
+}
 
 // testing controllers
 export const fetchAllAdminOrder = async(req , res)=>{

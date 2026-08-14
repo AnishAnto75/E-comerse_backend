@@ -35,7 +35,7 @@ const purchaseSchema = mongoose.Schema({
     payment_date:{ type:Date, default:null},
     
     added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff", required : true },
-    deleted:{ type:Boolean, default:false},
+    deleted:{ type: Boolean, default:false},
     history: { type: mongoose.Schema.Types.Mixed, default: {}}
     
 },{timestamps: true})

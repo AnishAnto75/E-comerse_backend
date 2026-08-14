@@ -16,10 +16,19 @@ export const adminFetchPurchasePage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 )
         const skip = (page - 1) * limit;
 
-        const payment_status = req.query.payment_status?.trim() != "all" ? req.query.payment_status?.trim()  : "";
+        const payment_status = req.query.payment_status?.trim() 
+        const search = req.query.search?.trim()
 
         const match = { deleted: false }
-        if (payment_status) { match.payment_status = payment_status }
+        if (payment_status && payment_status !== "all") {
+            if (!["Paid", "Partial", "Pending"].includes(payment_status)) { return }
+            match.payment_status = payment_status
+        }
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+            const searchRegex = { $regex: escapedSearch, $options: "i" }
+            match.$or = [{ purchase_id: searchRegex }, { supplier_invoice_no: searchRegex }]
+        }
 
         const summary = await Purchase.aggregate([
             { $match: { deleted: false }},

@@ -129,10 +129,7 @@ export const adminFetchGroupCategoryPage = async (req, res) => {
             }}
         ]);
 
-        const data = {
-            summary,
-            groups
-        }
+        const data = { summary, groups }
 
         return apiSucessResponce( res, "Group and category data fetched successfully.", data, 200);
     } catch (error) {

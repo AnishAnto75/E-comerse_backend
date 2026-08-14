@@ -18,10 +18,17 @@ export const adminFetchProductPage = async (req, res) => {
         const limit = Math.min( Math.max(parseInt(req.query.limit) || 20, 1), 100 );
         const skip = (page - 1) * limit
 
-        const status = req.query.status?.trim() != "all" ? req.query.status?.trim()  : "";
+        const status = req.query.status?.trim()
+        const search = req.query.search?.trim()
 
         const match = { deleted: false }
-        if (status) { match.status = status }
+        if (status && status !== "all") { match.status = status }
+
+        if (search) {
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const searchRegex = { $regex: escapedSearch, $options: "i" }
+            match.$or = [{ product_barcode: searchRegex }, { product_name: searchRegex }]
+        }
 
         const summaryResult = await Product.aggregate([
             { $match: { deleted: false } },
@@ -119,8 +126,6 @@ export const adminFetchProductPage = async (req, res) => {
 
         const totalProducts = await Product.countDocuments(match)
         const totalPages = Math.ceil( totalProducts / limit )
-
-        console.log({summary})
 
         const data = {
             summary, 
@@ -391,7 +396,7 @@ export const createProduct = async(req , res)=>{
                 product_name: product[0].product_name,
                 added_by: user.name
             }
-        }], { session });
+        }], { session })
 
         await session.commitTransaction();
         return apiSucessResponce(res, "Product Created Successfully", product[0] )
