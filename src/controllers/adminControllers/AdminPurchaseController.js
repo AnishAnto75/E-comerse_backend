@@ -115,7 +115,7 @@ export const adminCreatePurchase = async(req, res)=>{
         if ( !supplier_id || !supplier_invoice_no?.trim() || !invoice_date || !delivery_date){ return apiErrorResponce(res,"Missing required fields");}
         if(!Array.isArray(products) || products.length===0){ return apiErrorResponce(res,"Please add at least one product");}
 
-        session.startTransaction();
+        session.startTransaction()
 
         // Validation
         const supplier = await Supplier.findOne({ _id: supplier_id, deleted: false, status:"active"}).session(session);
@@ -325,7 +325,7 @@ export const adminCreatePurchase = async(req, res)=>{
 
         // recording recentActivity
         await RecentActivity.create([{
-            user_id: req.user._id,
+            performed_by: req.user._id,
             activity_type: "purchase",
             action: "created",
             title: "Purchase Created",
@@ -340,13 +340,13 @@ export const adminCreatePurchase = async(req, res)=>{
                 grandTotal,
                 payment_method
             }
-        }], { session });
+        }], { session })
 
         await session.commitTransaction();
         return apiSucessResponce( res, "Purchase entry created successfully", purchase[0]);
 
     } catch (error) {
-        await session.abortTransaction();
+        await session.abortTransaction()
         console.log("error in adminCreatePurchase :", error);
         return apiErrorResponce( res, "internal server error", null, 500);
 

@@ -333,8 +333,7 @@ export const createProduct = async(req , res)=>{
         
         
         // Database validation
-
-        session.startTransaction();
+        await session.startTransaction();
 
         const validateGroup = await ProductGroup.findOne({_id: product_group, deleted: false}).session(session);
         if(!validateGroup) { 
@@ -384,10 +383,10 @@ export const createProduct = async(req , res)=>{
         const product = await Product.create([formattedData], { session })
 
         await RecentActivity.create([{
-            user_id: req.user._id,
+            performed_by: req.user._id,
             activity_type: "product",
             action: "created",
-            title: "Product Added",
+            title: "Product Created",
             description: `Product "${product[0].product_name}" has been created successfully.`,
             reference_id: product[0]._id,
             reference_model: "Product",

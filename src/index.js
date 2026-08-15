@@ -23,15 +23,11 @@ app.use("/uploads", express.static("uploads"));
 
 mongoose.connect(MONGODB_URL).then(()=>console.log('Connected to database'))
 
-app.get('/' , (req , res)=>{
-    res.send('Page Not Found')
-})
+app.get('/' , (req , res)=>{ res.send('Page Not Found')})
 
 app.use('/api/auth' , authRoutes)
 
 app.use('/api/admin' , adminRoutes)
 app.use('/api/user' , userRoutes)
 
-app.listen( PORT , ()=>{
-    console.log('server is running on port:',PORT)
-})
+app.listen( PORT , ()=>{ console.log('server is running on port:',PORT)})

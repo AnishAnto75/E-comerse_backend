@@ -54,11 +54,11 @@ export const createSupplier = async (req, res) => {
         const supplier = await Supplier.create([formattedData], { session });
 
         await RecentActivity.create([{
-            user_id: req.user._id,
+            performed_by: req.user._id,
             activity_type: "supplier",
             action: "created",
-            title: "Supplier Added",
-            description: `Supplier "${supplier[0].supplier_name}" has been created successfully..`,
+            title: "Supplier Created",
+            description: `Supplier "${supplier[0].supplier_name}" has been created successfully`,
             reference_id: supplier[0]._id,
             reference_model: "Supplier",
             metadata: {
@@ -75,7 +75,7 @@ export const createSupplier = async (req, res) => {
         console.log("Error in createSupplier",error);
         return apiErrorResponce(res, "Internal Server Error" );
     } finally { session.endSession() }
-};
+}
 
 export const adminFetchSupplierPage = async (req, res) => {
     try {

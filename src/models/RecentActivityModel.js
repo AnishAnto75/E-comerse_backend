@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 const recentActivitySchema = new mongoose.Schema({
-    user_id: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
+    performed_by: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true},
     activity_type: { type: String,
         enum: [
             "product",
@@ -13,7 +13,7 @@ const recentActivitySchema = new mongoose.Schema({
             "brand",
             "category",
             "group",
-            "user"
+            "staff"
         ],
         required: true
     },
@@ -25,6 +25,7 @@ const recentActivitySchema = new mongoose.Schema({
             "restored",
             "stock_added",
             "stock_removed",
+            "stock_altered",
             "status_changed",
             "login",
             "logout"
@@ -45,7 +46,7 @@ const recentActivitySchema = new mongoose.Schema({
             "ProductBrand",
             "ProductCategory",
             "ProductGroup",
-            "User"
+            "Staff"
         ],
         required: true
     },
@@ -53,14 +54,17 @@ const recentActivitySchema = new mongoose.Schema({
     viewed: { type: Boolean, default: false},
     viewed_at: {type: Date, default: null},
     viewed_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff" },    
-    
+
     deleted:{ type: Boolean, default: false},
 
 }, { timestamps: true });
 
 recentActivitySchema.index({ createdAt: -1 });
-recentActivitySchema.index({ user_id: 1 });
-recentActivitySchema.index({ activity_type: 1 });
+recentActivitySchema.index({ performed_by: 1 });
+recentActivitySchema.index({ viewed: 1, createdAt: -1 });
+recentActivitySchema.index({ activity_type: 1, createdAt: -1 });
+recentActivitySchema.index({ action: 1, createdAt: -1 });
+recentActivitySchema.index({ deleted: 1, createdAt: -1 });
 
 const RecentActivity = mongoose.model("RecentActivity", recentActivitySchema);
 

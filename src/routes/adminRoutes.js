@@ -15,6 +15,7 @@ import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForP
 import { createProductBrand , adminEditBrand, fetchBrand, adminSearchBrand, fetchBrandPage} from "../controllers/adminControllers/adminProductBrandController.js";
 import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductImage, uploadStaffImage } from "../middlewares/multer.js";
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
+import { adminFetchActivityPage, adminFetchPreviewActivity } from "../controllers/adminControllers/adminActivityController.js";
 
 const router = express.Router()
 
@@ -83,7 +84,9 @@ router.get('/customer/customer_page' , verifyUser, adminFetchCustomersPage )
 router.get('/customer/customer_preview_page/:user_id' , verifyUser, adminFetchCustomerPreviewPage )
 
 
-
+// Recent Activity
+router.get('/activity/activity_page' , verifyUser, adminFetchActivityPage )
+router.get('/activity/activity_preview_page/:_id' , verifyUser, adminFetchPreviewActivity )
 
 
 

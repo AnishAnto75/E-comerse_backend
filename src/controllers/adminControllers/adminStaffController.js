@@ -3,44 +3,65 @@ import bcrypt from 'bcrypt'
 import User from '../../models/UserModel.js'
 import { apiErrorResponce, apiSucessResponce } from '../../utils/apiResponce.js'
 import { generateRandom10DigitNumber, generateRandom12DigitNumber } from '../../utils/generateRandomNumber.js'
+import RecentActivity from '../../models/RecentActivityModel.js'
+import mongoose from 'mongoose'
+import fs from "fs/promises"
+import path from "path"
 
 export const adminCreateStaff = async (req, res) => {
 
+    const session = await mongoose.startSession();
+    
     try {
 
         const { name, email, gender, department, role, salary, phone_number, alternate_phone_number, qualification, pancard_number, aadhar_number, DOB, joining_date } = req.body;
+        const photo = req.file
+        let emergency_contact = {}
+        let bank_details = {}
+        let address = {}
+        const DOBDate = DOB ? new Date(DOB) : null
 
-        const emergency_contact = JSON.parse(req.body.emergency_contact || "{}");
-        const bank_details = JSON.parse(req.body.bank_details || "{}");
-        const address = JSON.parse(req.body.address || "{}");
-
-        const photo = req.file;
-
-        if (!name?.trim()) return apiErrorResponce(res, "Staff name is required.");
-        if (!gender) return apiErrorResponce(res, "Gender is required.");
-        if (!department) return apiErrorResponce(res, "Department is required.");
-        if (!role) return apiErrorResponce(res, "Role is required.");
-        if (!phone_number?.trim()) return apiErrorResponce(res, "Phone number is required.");
-        if (!joining_date || isNaN(new Date(joining_date))) return apiErrorResponce(res, "Joining date is required.");
-        if (!address) return apiErrorResponce(res, "Address is required.");
-        if (!address.house_no?.trim() || !address.area?.trim() || !address.city?.trim() || !address.district?.trim() || !address.state?.trim() || !address.pincode?.trim()) { return apiErrorResponce(res,"Complete address is required.") }
-        if (!photo) return apiErrorResponce(res, "Staff photo is required.");
-
+        try {
+            emergency_contact = JSON.parse(req.body.emergency_contact || "{}");
+            bank_details = JSON.parse(req.body.bank_details || "{}");
+            address = JSON.parse(req.body.address || "{}");
+        } catch (error) { return apiErrorResponce( res,  "Invalid JSON data.", null, 400 )}
+        
+        // -------------------------------------------------------------------------
+        // validation
+        const joiningDate = new Date(joining_date)
+        const phoneRegex = /^[6-9]\d{9}$/
+        const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]$/
+        const aadhaarRegex = /^\d{12}$/
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         const departmentRoles = {
             administration: ["admin", "general_manager", "manager", "assistant_manager", "staff", "bpo"],
             sales: ["manager", "assistant_manager", "staff", "bpo"],
             inventory: ["manager", "assistant_manager", "staff"],
             delivery: ["delivery", "staff"]
-        };
-
+        }
+        
+        if ( !name?.trim() ) return apiErrorResponce(res, "Staff name is required.");
+        if ( !gender ) return apiErrorResponce(res, "Gender is required.");
+        if ( !department ) return apiErrorResponce(res, "Department is required.");
+        if ( !role ) return apiErrorResponce(res, "Role is required.");
+        if ( email?.trim() && !emailRegex.test(email.trim())) { return apiErrorResponce( res, "Invalid email address.", null, 400 )}
+        if ( !phone_number?.trim() || !phoneRegex.test(phone_number.trim()) ) { return apiErrorResponce(res, "Invalid phone number.", null, 400) }
+        if ( alternate_phone_number?.trim() && !phoneRegex.test(alternate_phone_number.trim())) { return apiErrorResponce( res, "Invalid alternate phone number.", null, 400 )}
+        if ( !joining_date || Number.isNaN(joiningDate.getTime())) { return apiErrorResponce( res, "Valid joining date is required.", null, 400 )}
+        if ( !address.house_no?.trim() || !address.area?.trim() || !address.city?.trim() || !address.district?.trim() || !address.state?.trim() || !address.pincode?.trim()) { return apiErrorResponce(res,"Complete address is required.") }
+        if ( !photo ) return apiErrorResponce(res, "Staff photo is required.")
+        if ( emergency_contact.phone_number?.trim() &&!phoneRegex.test(emergency_contact.phone_number.trim())) { return apiErrorResponce( res, "Invalid emergency contact phone number.", null, 400 )}        
+        if ( pancard_number?.trim()) { const pan = pancard_number.trim().toUpperCase(); if (!panRegex.test(pan)) { return apiErrorResponce(res, "Invalid PAN card number.", null, 400)}}
+        if ( aadhar_number?.trim()) { const aadhaar = aadhar_number.trim(); if (!aadhaarRegex.test(aadhaar)) { return apiErrorResponce(res, "Invalid Aadhar number.", null, 400)}}
         if (!departmentRoles[department]?.includes(role)) { return apiErrorResponce(res,"Invalid role for selected department.");}
-
+        if ( DOB && Number.isNaN(DOBDate.getTime())) { return apiErrorResponce( res, "Invalid date of birth.", null, 400 )}
+        
         const duplicateConditions = [ { phone_number : phone_number.trim() } ];
-
         if (email?.trim()) { duplicateConditions.push({ email: email.trim().toLowerCase() }) }
         if (pancard_number?.trim()) { duplicateConditions.push({ pancard_number: pancard_number.trim().toUpperCase() }) }
         if (aadhar_number?.trim()) { duplicateConditions.push({ aadhar_number: aadhar_number.trim() });}
-
+        
         const existingStaff = await Staff.findOne({ deleted: false, $or: duplicateConditions })
 
         if (existingStaff) {
@@ -49,6 +70,9 @@ export const adminCreateStaff = async (req, res) => {
             if (pancard_number && existingStaff.pancard_number === pancard_number.toUpperCase().trim()) return apiErrorResponce(res, "PAN card already exists.");
             if (aadhar_number && existingStaff.aadhar_number === aadhar_number.trim()) return apiErrorResponce(res, "Aadhar number already exists.");
         }
+        // --------------------------------------
+
+        await session.startTransaction()
 
         const staff = await Staff.create({
 
@@ -64,7 +88,7 @@ export const adminCreateStaff = async (req, res) => {
             qualification: qualification?.trim() || null,
             pancard_number: pancard_number?.trim().toUpperCase() || null,
             aadhar_number: aadhar_number?.trim() || null,
-            DOB: DOB ? new Date(DOB) : null,
+            DOB: DOBDate,
             emergency_contact: {
                 name: emergency_contact.name?.trim() || null,
                 phone_number: emergency_contact.phone_number?.trim() || null,
@@ -90,18 +114,48 @@ export const adminCreateStaff = async (req, res) => {
                 state: address.state?.trim(),
                 pincode: address.pincode?.trim()
             },
-            joining_date,
+            joining_date: joiningDate,
             created_by: req.user._id
 
-        })
+        }).session(session)
 
-        return apiSucessResponce( res, "Staff created successfully.", staff, 201 )
+        // recording recentActivity
+        await RecentActivity.create([{
+            performed_by: req.user._id,
+            activity_type: "staff",
+            action: "created",
+            title: "Staff Created",
+            description: `Staff ${staff.staff_id} created successfully.`,
+            reference_id: staff._id,
+            reference_model: "Staff",
+            metadata: {
+                staff_id: staff.staff_id,
+                name: staff.name,
+                phone_number: staff.phone_number,
+                joining_date: staff.joining_date
+            }
+        }], { session })
+
+        await session.commitTransaction()
+        return apiSucessResponce( res, "Staff created successfully.", null, 201 )
 
     } catch (error) {
+        if (session.inTransaction()) { await session.abortTransaction() }
+        if (req.file?.path) { await fs.unlink(req.file.path).catch(() => {});}
+        if (error.code === 11000) {
+            const field = Object.keys(error.keyPattern || {})[0]
+            const messages = {
+                staff_id: "Staff ID already exists.",
+                email: "Email already exists.",
+                phone_number: "Phone number already exists.",
+                pancard_number: "PAN card already exists.",
+                aadhar_number: "Aadhar number already exists."
+            }
+            return apiErrorResponce( res, messages[field] || "Duplicate staff information.", null, 409 )
+        }
         console.log("Error in createStaff controller:", error)
         return apiErrorResponce( res, "Internal Server Error", error.message, 500 )
-    }
-
+    } finally { await session.endSession();}
 }
 
 export const adminFetchStaffPage = async (req, res) => {
@@ -188,7 +242,7 @@ export const adminFetchStaffPage = async (req, res) => {
 
 export const adminFetchPreviewStaff = async (req, res) => {
     try {
-        const { staff_id } = req.params;
+        const { staff_id } = req.params
         if (!staff_id?.trim()) { return apiErrorResponce( res, "Staff ID is required", null, 400 )}
 
         const staff = await Staff.findOne({ staff_id: staff_id.trim(),deleted: false })
