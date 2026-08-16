@@ -6,7 +6,7 @@ const orderSchema = mongoose.Schema({
     total_mrp:{ type : Number, required : true, min: 1 },
     total_price:{ type : Number, required : true, min: 1 },
     delivery_charges : { type : Number, required : true, min: 0 },
-    total_amount : {type : Number, required : true, min: 200},
+    total_amount : {type : Number, required : true, min: 0},
     total_gst: { type: Number, required: true, min: 1 },
     total_quantity : {type : Number , required : true, min: 1},
     coupon: {

@@ -35,13 +35,12 @@ const transactionSchema = new mongoose.Schema(
         required: true
     },
     reference_no: {type: String, default: null},
-    order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order", default: null},
-    purchase_id: { type: mongoose.Schema.Types.ObjectId, ref: "Purchase", default: null},
+    order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
+    purchase_id: { type: mongoose.Schema.Types.ObjectId, ref: "Purchase" },
     notes: { type: String, default: null },
     transaction_date: { type: Date, default: Date.now },
-    added_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", }
-},
-{
+    performed_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", }
+},{
     timestamps: true
 });
 
@@ -58,4 +57,4 @@ transactionSchema.index(
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
-export default Transaction;
+export default Transaction

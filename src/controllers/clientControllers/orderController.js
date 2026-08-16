@@ -131,13 +131,14 @@ export const createOrder = async(req , res)=>{
         await cart.save({session})
 
         // Saving Transaction of the order
-        if(!payment_method == "COD"){
+        if(payment_method != "COD"){
             const transactionData = {
                 type: "income",
                 category: "Sales",
-                title: `Income Order ${order.order_id}`,
+                title: `Order payment received`,
                 amount: order.total_amount,
-                payment_method: order.payment_method,
+                payment_method: order.payment.method,
+                notes: `Payment received for order '${order.order_id}'`,
                 reference_no: order.order_id,
                 order_id: order._id
             }
@@ -173,6 +174,10 @@ export const getAllOrder = async(req , res)=>{
 
 
 
+
+
+
+
 //  old code
 
 export const getOrder = async(req , res)=>{
@@ -189,8 +194,6 @@ export const getOrder = async(req , res)=>{
         return apiErrorResponce(res , "internal server error" , null , 500)
     }
 }
-
-
 
 export const cancelOrder = async(req , res)=>{
     try {

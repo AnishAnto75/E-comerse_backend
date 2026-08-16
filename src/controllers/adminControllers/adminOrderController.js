@@ -239,7 +239,7 @@ export const adminDeliverOrder = async (req, res) => {
             const transaction = new Transaction({
                 type: "income",
                 category: "Sales",
-                title: `Sale - Order ${order.order_id}`,
+                title: `Order Income`,
                 amount: order.total_amount,
                 payment_method: "Cash",
                 reference_no: order.order_id,

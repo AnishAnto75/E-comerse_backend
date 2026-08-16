@@ -313,13 +313,14 @@ export const adminCreatePurchase = async(req, res)=>{
             await Transaction.create([{
                 type: "expense",
                 category: "Purchase",
-                title: `Purchased ${purchase[0].purchase_id}`,
+                title: `Purchase Expense`,
                 amount: Number(paid_amount),
                 payment_method,
                 reference_no: purchase[0].purchase_id,
                 purchase_id: purchase[0]._id,
                 transaction_date: payment_date || new Date(),
-                added_by:req.user._id
+                notes: `Payment made for invoice '${purchase[0].supplier_invoice_no}'`,
+                performed_by: req.user._id
             }],{ session });
         }
 
