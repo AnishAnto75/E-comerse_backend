@@ -16,7 +16,7 @@ import { createProductBrand , adminEditBrand, fetchBrand, adminSearchBrand, fetc
 import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductImage, uploadStaffImage } from "../middlewares/multer.js";
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
 import { adminFetchActivityPage, adminFetchPreviewActivity } from "../controllers/adminControllers/adminActivityController.js";
-import { adminFetchTransactionsPage } from "../controllers/adminControllers/adminTransactionsController.js";
+import { adminCreateTransaction, adminFetchTransactionsPage } from "../controllers/adminControllers/adminTransactionsController.js";
 
 const router = express.Router()
 
@@ -92,6 +92,7 @@ router.get('/activity/activity_preview_page/:_id' , verifyUser, adminFetchPrevie
 
 // Transactions
 router.get('/transaction/transaction_page' , verifyUser, adminFetchTransactionsPage )
+router.post('/transaction/create' , verifyUser, adminCreateTransaction )
 
 
 

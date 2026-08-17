@@ -1,48 +1,35 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const transactionSchema = new mongoose.Schema(
 {
-    type: { type: String, enum: ["income", "expense"], required: true},
+    type: { type: String, enum: ["income", "expense"], required: true },
     category: { type: String,
         enum: [
             // Income
-            "Sales", 
-            "Refund Received",
-            "Commission",
-            "Interest",
-            "Other Income",
+            "Sales", "Refund Received", "Commission", "Interest", "Other Income",
 
             // Expense
-            "Purchase",
-            "Salary",
-            "Rent",
-            "Electricity",
-            "Internet",
-            "Fuel",
-            "Packaging",
-            "Marketing",
-            "Maintenance",
-            "Tax",
-            "Miscellaneous"
+            "Purchase", "Salary", "Rent", "Electricity", "Internet", "Fuel", "Packaging", "Marketing", "Maintenance", "Tax", "Miscellaneous"
         ],
         required: true
     },
-    title: { type: String, required: true, trim: true},
-    amount: { type: Number, required: true, min: 0},
+    title: { type: String, required: true, trim: true },
+    amount: { type: Number, required: true, min: 0 },
     payment_method: {
         type: String,
         enum: [ "Cash", "UPI", "Card", "Bank Transfer", "Cheque", "Wallet", "Other" ],
         required: true
     },
-    reference_no: {type: String, default: null},
-    order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order" },
-    purchase_id: { type: mongoose.Schema.Types.ObjectId, ref: "Purchase" },
-    notes: { type: String, default: null },
-    transaction_date: { type: Date, default: Date.now },
-    performed_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", }
+    reference_no: {type: String, default: null },
+    order_id: { type: mongoose.Schema.Types.ObjectId, ref: "Order", default: null},
+    purchase_id: { type: mongoose.Schema.Types.ObjectId, ref: "Purchase",  default: null },
+    notes: { type: String, required: true },
+    transaction_date: { type: Date, required: true },
+    performed_by: { type: mongoose.Schema.Types.ObjectId, ref: "Staff", },
+    metadata : { type: mongoose.Schema.Types.Mixed, default: {} }
 },{
     timestamps: true
-});
+})
 
 transactionSchema.index(
     { order_id: 1, category: 1 },
@@ -53,7 +40,7 @@ transactionSchema.index(
             category: "Sales"
         }
     }
-);
+)
 
 const Transaction = mongoose.model("Transaction", transactionSchema);
 
