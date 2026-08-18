@@ -4,7 +4,7 @@ import verifyUser from "../middlewares/verifyUser.js";
 import { fetchProducts } from "../controllers/clientControllers/productController.js";
 import { addToCart, fetchCartSummary, fetchFullCart, minusToCart, removeProductFromCart } from "../controllers/clientControllers/cartController.js";
 import { addAddress, deleteAddress, fetchAddress } from "../controllers/clientControllers/addressController.js";
-import { createOrder, getAllOrder, getOrder } from "../controllers/clientControllers/orderController.js";
+import { cancelOrder, createOrder, fetchCustomerOrder, getAllOrder, getOrder } from "../controllers/clientControllers/orderController.js";
 
 const router = express.Router()
 
@@ -28,8 +28,10 @@ router.patch('/address/delete' , verifyUser , deleteAddress)
 
 
 // order
-router.get('/order' , verifyUser , getAllOrder)
+router.get('/order' , verifyUser , getAllOrder)                         // controller not created yet
+router.get('/order/order_id/:order_id' , verifyUser , fetchCustomerOrder)
 router.post('/order/create' , verifyUser , createOrder)
+router.patch('/order/cancel/order_id/:order_id' , verifyUser , cancelOrder)
 
 
 

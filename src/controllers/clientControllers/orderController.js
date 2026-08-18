@@ -158,6 +158,92 @@ export const createOrder = async(req , res)=>{
     }
 }
 
+export const fetchCustomerOrder = async (req, res) => {
+    try {
+        const { order_id } = req.params
+        const userId = req.user._id
+
+        if (!order_id) { return apiErrorResponce(res, "Order ID is required") }
+
+        const order = await Order.findOne({ order_id, user_id: userId })
+        .select(` order_id total_mrp total_price delivery_charges total_amount total_gst total_quantity delivery_address delivery_otp items payment.gateway payment.method payment.status payment.transaction_id payment.refund current_status order_status createdAt `)
+        .lean()
+
+        if (!order) { return res.status(404).json({ success: false, message: "Order not found" })}
+
+        return apiSucessResponce( res, "Order fetched successfully", order, 200 )
+
+    } catch (error) {
+        console.error("getCustomerOrder error:", error);
+        return apiErrorResponce(res, "Failed to fetch order" )
+    }
+}
+
+export const cancelOrder = async (req, res) => {
+
+    const session = await mongoose.startSession();
+
+    try {
+
+        const { order_id } = req.params
+        const { reason } = req.body
+        const user_id = req.user?._id
+
+        if (!order_id?.trim()) { return apiErrorResponce( res, "Order ID is required.", 400 ) }
+        if (!reason?.trim()) { return apiErrorResponce( res, "Cancellation reason is required.", 400 ) }
+        if ( reason.trim().length > 500 ) { return apiErrorResponce( res, "Cancellation reason cannot exceed 500 characters.", 400) }
+
+        await session.startTransaction()
+
+        const order = await Order.findOne({ order_id: order_id.trim(), user_id }).session(session);
+
+        if (!order) { await session.abortTransaction(); return apiErrorResponce( res, "Order not found.", 404 )}
+
+        if (order.current_status === "out") { await session.abortTransaction(); return apiErrorResponce( res, "Cannot cancel order after out for delivery.", 400 )}
+        if (order.current_status === "cancelled") { await session.abortTransaction(); return apiErrorResponce( res, "Order is already cancelled.", 400 )}
+        if (order.current_status === "delivered") { await session.abortTransaction(); return apiErrorResponce( res, "Delivered orders cannot be cancelled.",400) }
+
+        if ( !["placed", "confirmed" ].includes(order.current_status)) { await session.abortTransaction(); return apiErrorResponce( res, `Order cannot be cancelled because its status is "${order.current_status}".`,400 )}
+
+        order.current_status = "cancelled"
+
+        order.order_status.cancelled = {
+            status: true,
+            date: new Date(),
+            cancelled_by: "customer",
+            reason: reason.trim()
+        }
+
+        order.delivery_otp = ""
+
+        if ( order.payment.method !== "COD" && order.payment.status === "Paid" ) {
+            order.payment.refund = {
+                amount: order.total_amount,
+                status: "Pending",
+                transaction_id: ""
+            }
+        }
+
+        await order.save({ session })
+        await session.commitTransaction();
+        return apiSucessResponce( res, "Order cancelled successfully.", order, 200 )
+
+    } catch (error) {
+        if (session.inTransaction()) { await session.abortTransaction() }
+        console.error( "Error in cancelOrder:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
+    } finally {
+        await session.endSession()
+    }
+}
+
+
+
+
+
+
+
+// controller not yet made
 export const getAllOrder = async(req , res)=>{
     try {
         const user = req.user
@@ -191,33 +277,6 @@ export const getOrder = async(req , res)=>{
         return apiSucessResponce(res , "Order Fetched Sucessfully" , order )
     } catch (error) {
         console.log("error in getOrder controller : " ,error)
-        return apiErrorResponce(res , "internal server error" , null , 500)
-    }
-}
-
-export const cancelOrder = async(req , res)=>{
-    try {
-        const {id} = req.params
-        
-        const reason_for_cancel = req.body.data?.reason_for_cancel
-        if(!reason_for_cancel){return apiErrorResponce(res, "Invalid Credentials")}
-        
-        const order = await Order.findOne({order_id : id})
-        if(!order){ return apiErrorResponce(res, "Order Not Found", null, 404) }        
-        
-        if(order.order_status.delivered.status){return apiErrorResponce(res, "Can't cancel the because the order is already delivered")}
-        if(order.order_status.canceled.status){return apiErrorResponce(res, "Order Is Already Canceled")}
-
-        order.order_status.canceled.status = true
-        order.order_status.canceled.date = new Date()
-        order.order_status.canceled.canceled_by = 'customer'
-        order.order_status.canceled.reason_for_cancel = reason_for_cancel
-        await order.save()
-
-        return apiSucessResponce(res , "Order Canceled", order.order_status )
-
-    } catch (error) {
-        console.log("error in cancelOrder controller : " ,error)
         return apiErrorResponce(res , "internal server error" , null , 500)
     }
 }
