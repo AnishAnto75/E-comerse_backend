@@ -15,11 +15,11 @@ export const addToCart = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(product_id)) { return apiErrorResponce(res, "Invalid Product") }
         if (!Number.isInteger(quantity) || quantity < 1) { return apiErrorResponce(res, "Invalid Quantity") }
 
-        const product = await Product.findOne({_id: product_id, deleted: false, status: "active", out_of_stock: false })
+        const product = await Product.findOne({_id: product_id, deleted: false, status: "active" })
         if (!product) { return apiErrorResponce(res, "Product not found") }
 
         const inventory = await ProductInventory.findOne({ product_id })
-        if (!inventory || inventory.product_total_stock <= 0 ) { return apiErrorResponce(res, "Insufficient stock") }
+        if (!inventory || inventory.product_total_stock <= 0 ) { return apiErrorResponce(res, "Insufficient stock")}
 
         let cart = await Cart.findOne({ user_id: userId })
 
@@ -33,9 +33,9 @@ export const addToCart = async (req, res) => {
 
             let newQuantity = existingProduct.quantity + quantity;
 
-            newQuantity = Math.max( product.product_min_order_quantity, newQuantity );
-            newQuantity = Math.min(product.product_max_order_quantity, newQuantity);
-            newQuantity = Math.min(inventory.product_total_stock, newQuantity);
+            newQuantity = Math.max( product.product_min_order_quantity, newQuantity )
+            newQuantity = Math.min(product.product_max_order_quantity, newQuantity)
+            newQuantity = Math.min(inventory.product_total_stock, newQuantity)
 
             existingProduct.quantity = newQuantity;
             updatedQuantity = newQuantity;
@@ -71,7 +71,7 @@ export const minusToCart = async (req, res) => {
 
         if (!mongoose.Types.ObjectId.isValid(product_id)) { return apiErrorResponce(res, "Invalid Product") }
 
-        const product = await Product.findOne({_id: product_id, deleted: false, status: "active", out_of_stock: false })
+        const product = await Product.findOne({_id: product_id, deleted: false, status: "active" })
         if (!product) { return apiErrorResponce(res, "Product not found") }
 
         let cart = await Cart.findOne({ user_id: userId })
@@ -170,7 +170,6 @@ export const fetchFullCart = async(req , res)=>{
                 current_stock: { $ifNull: ["$inventory.product_total_stock", 0] },
                 min_order_quantity: "$product.product_min_order_quantity",
                 max_order_quantity: "$product.product_max_order_quantity",
-                out_of_stock: "$product.out_of_stock",
                 status: "$product.status",
                 deleted: "$product.deleted",
                 added_at: "$products.added_at"
@@ -214,7 +213,7 @@ export const removeCart = async(req , res)=>{
         const userCart = await User.findOneAndUpdate({_id : user._id},{cart: newCartProducts} , {returnDocument: 'after'})
             .populate({ path: ["cart.product_id"],
                 populate: {path: 'product_brand product_inventory_id' , select: "Brand_name product_stock.stock product_stock.size product_stock.mrp product_stock.price"},
-                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "hidden", "deleted", "out_of_stock"  ], 
+                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "deleted" ], 
                 strictPopulate: false })
             .select("cart")
 
@@ -235,7 +234,7 @@ export const alterProductCart = async(req , res)=>{
         const {product_barcode , quantity} = data
         if(!product_barcode){return apiErrorResponce(res , "Invalid Credentials")}
 
-        const product_details = await Product.findOne({product_barcode, deleted: false, hidden: false, out_of_stock: false})
+        const product_details = await Product.findOne({product_barcode, deleted: false })
         if(!product_details){return apiErrorResponce(res , "Product Currently Unavailable")}
 
         if (!usr.cart?.length){return apiErrorResponce(res , "Product Not Found" , null , 400)}
@@ -255,7 +254,7 @@ export const alterProductCart = async(req , res)=>{
         const userCart = await User.findOneAndUpdate({_id : usr._id},{cart: newCartProducts} , {returnDocument: 'after'})
             .populate({ path: ["cart.product_id"],
                 populate: {path: 'product_brand product_inventory_id' , select: "Brand_name product_stock.stock product_stock.size product_stock.mrp product_stock.price"},
-                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "hidden", "deleted", "out_of_stock"  ], 
+                select:["product_name", "product_brand", "product_barcode", "product_inventory_id", "product_min_order_quantity", "product_max_order_quantity", "product_photos" , "deleted" ], 
                 strictPopulate: false })
             .select("cart")
 

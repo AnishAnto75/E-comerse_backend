@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 
 const productInventorySchema = mongoose.Schema({
     product_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Product", unique: true , required: true },    
-    product_low_in_stock : { type: Number, default: 1 },
+    product_low_in_stock : { type: Number, default: 5 },
     product_total_stock : { type: Number, default: 0 },
     product_stock : [{
         purchase_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Purchase" , required: true },
@@ -11,7 +11,7 @@ const productInventorySchema = mongoose.Schema({
         size: {type: String, default: "" },
         manufacture_date: { type: Date, default: null},
         expiry_date: { type: Date, default: null },
-        best_before: { type: Number, default: "" },
+        best_before: { type: Number, default: 0 },
         mrp: { type : Number, required: true, min: 0 },
         purchase_cost : { type : Number, required: true, min: 0 },                  // without gst
         gst_percentage : { type : Number, required: true, min: 0 },
@@ -22,7 +22,7 @@ const productInventorySchema = mongoose.Schema({
     },{
         timestamps: true
     }],
-    history: { type: mongoose.Schema.Types.Mixed, default: {}},
+    history: { type: mongoose.Schema.Types.Mixed, default: {} },
     deleted : { type:Boolean, default: false},
 },{ timestamps : true }
 )

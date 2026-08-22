@@ -3,7 +3,7 @@ import express from "express";
 import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
-import { adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProduct, adminFetchProductByCategory, adminFetchProductPage, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
+import { adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProductByCategory, adminFetchProductPage, adminFetchProductPreview, adminFetchProductView, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminCreateStaff, adminFetchAllStaffs, adminFetchPreviewStaff, adminFetchStaff, adminFetchStaffPage } from "../controllers/adminControllers/adminStaffController.js";
 import { adminBlockUser, adminFetchAllCustomer, adminFetchCustomerPreviewPage, adminFetchCustomersPage, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
@@ -27,7 +27,8 @@ router.get('/dashboard', adminDashboardData)
 
 // product 
 router.get('/product/product_page', adminFetchProductPage)
-router.get('/product/product_id/:barcode', adminFetchProduct)
+router.get('/product/product_preview/product_id/:barcode', adminFetchProductPreview)
+router.get('/product/product_id/:barcode', adminFetchProductView)
 router.get('/product/fetch-for-create-product', adminFetchForCreateProductPage)
 router.get('/product/fetch-categories-for-create-product/:id', adminFetchCategoriesForCreateProductPage)
 router.post('/product/add-product' , verifyUser, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
@@ -131,7 +132,7 @@ router.post('/brand/edit/:id' , verifyUser, verifingAdmin, adminEditBrand )
 router.get('/product/search' , verifyUser, verifingAdmin, adminSearchProducts)
 router.get('/product/all-product' , verifyUser, verifingAdmin, adminFetchAllProduct)
 router.get('/product/product-page' , verifyUser, verifingAdmin, adminFetchForProductPage)
-router.get('/product/product_id/:id' , verifyUser, verifingAdmin, adminFetchProduct)
+router.get('/product/product_id/:id' , verifyUser, verifingAdmin, adminFetchProductView)
 router.get('/product/category/:id' , verifyUser, verifingAdmin, adminFetchProductByCategory)
 
 

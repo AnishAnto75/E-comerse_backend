@@ -147,7 +147,7 @@ export const adminFetchProductPage = async (req, res) => {
     }
 }
 
-export const adminFetchProduct = async (req, res) => {
+export const adminFetchProductPreview = async (req, res) => {
     try {
 
         const { barcode } = req.params;
@@ -274,6 +274,122 @@ export const adminFetchProduct = async (req, res) => {
     } catch (error) {
         console.error( "Error in adminFetchProduct:", error )
         return apiErrorResponce( res, "Internal Server Error", null, 500)
+    }
+}
+
+export const adminFetchProductView = async (req, res) => {
+    try {
+
+        const { barcode } = req.params
+        if (!barcode?.trim()) { return apiErrorResponce( res, "Product barcode is required.", null, 400 )}
+
+        const [product] = await Product.aggregate([
+            { $match: { product_barcode: barcode.trim(), deleted: false }},
+            
+            { $lookup: {
+                from: "productgroups",
+                localField: "product_group",
+                foreignField: "_id",
+                as: "product_group"
+            }},
+            { $unwind: { path: "$product_group", preserveNullAndEmptyArrays: true }},
+
+            { $lookup: { 
+                from: "productcategories",
+                localField: "product_category",
+                foreignField: "_id",
+                as: "product_category"
+            }},
+            { $unwind: { path: "$product_category", preserveNullAndEmptyArrays: true }},
+            
+            { $lookup: {
+                from: "productbrands",
+                localField: "product_brand",
+                foreignField: "_id",
+                as: "product_brand"
+            }},
+            { $unwind: { path: "$product_brand", preserveNullAndEmptyArrays: true }},
+            
+            { $lookup: {
+                from: "staffs",
+                localField: "product_added_by",
+                foreignField: "_id",
+                as: "product_added_by"
+            }},
+            { $unwind: { path: "$product_added_by", preserveNullAndEmptyArrays: true}},
+            
+            { $lookup: {
+                from: "productinventories",
+                let: { productId: "$_id" },
+                pipeline: [
+                    { $match: { $expr: { $and: [{ $eq: [ "$product_id", "$$productId"]}, { $ne: [ "$deleted", true ]}]}}},
+                    { $project: {
+                        _id: 1,
+                        product_low_in_stock: 1,
+                        product_total_stock: 1,
+                        product_stock: 1,
+                        updatedAt: 1
+                    }}
+                ],
+                as: "inventory"
+            }},
+            { $unwind: { path: "$inventory", preserveNullAndEmptyArrays: true }},
+            { $project: {
+                    _id: 1,
+                    product_name: 1,
+                    product_barcode: 1,
+                    product_UOM: 1,
+                    product_net_unit: 1,
+                    product_min_order_quantity: 1,
+                    product_max_order_quantity: 1,
+                    product_hsn_code: 1,
+                    product_group: {
+                        _id: "$product_group._id",
+                        group_name: "$product_group.group_name"
+                    },
+                    product_category: {
+                        _id: "$product_category._id",
+                        category_name: "$product_category.category_name"
+                    },
+                    product_brand: {
+                        _id: "$product_brand._id",
+                        brand_name: "$product_brand.brand_name"
+                    },
+                    product_photo: 1,
+                    product_additional_photos: 1,
+                    product_description: 1,
+                    product_highlights: 1,
+                    product_added_by: {
+                        _id: "$product_added_by._id",
+                        staff_id: "$product_added_by.staff_id",
+                        name: "$product_added_by.name"
+                    },
+                    product_varient: 1,
+                    faqs: 1,
+                    current_stock: 1,
+                    latest_batch_details: 1,
+                    search_keywords: 1,
+                    status: 1,
+                    inventory: {
+                        _id: "$inventory._id",
+                        low_in_stock: "$inventory.product_low_in_stock",
+                        total_stock: "$inventory.product_total_stock",
+                        batches: "$inventory.product_stock",
+                        updated_at: "$inventory.updatedAt"
+                    },
+                    createdAt: 1,
+                    updatedAt: 1
+                }
+            }
+        ])
+
+        if (!product) { return apiErrorResponce( res, "Product not found.", null, 404 )}
+
+        return apiSucessResponce( res, "Product details fetched successfully.", product, 200 )
+
+    } catch (error) {
+        console.error( "Error in adminFetchProductView:", error )
+        return apiErrorResponce( res, "Internal Server Error", null, 500 )
     }
 }
 

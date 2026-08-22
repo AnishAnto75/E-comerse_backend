@@ -12,8 +12,7 @@ export const fetchProducts = async (req, res) => {
         const filter = {
             deleted: false,
             status: "active",
-            out_of_stock: false
-        };
+        }
 
         if (category && mongoose.Types.ObjectId.isValid(category)) {
             filter.product_category = new mongoose.Types.ObjectId(category);
@@ -27,7 +26,7 @@ export const fetchProducts = async (req, res) => {
                 { product_name: regex },
                 { product_barcode: regex },
                 { search_keywords: regex }
-            ];
+            ]
         }
 
         const result = await Product.aggregate([
@@ -65,7 +64,7 @@ export const fetchProducts = async (req, res) => {
                 ],
                 totalCount: [{ $count: "count" }]
             }}
-        ]);
+        ])
 
         const products = result[0].products;
         const totalProducts = result[0].totalCount[0]?.count || 0;
@@ -75,15 +74,32 @@ export const fetchProducts = async (req, res) => {
             limit: Number(limit),
             totalProducts,
             totalPages: Math.ceil(totalProducts / Number(limit))
-        };
+        }
         return apiSucessResponce(res, "Product Fetched Sucessfully", {products, pagination})
 
     } catch (error) {
         console.log("error in fetchProducts controller", error)
         return apiErrorResponce(res, "Internal Server Error")
     }
-};
+}
 
+
+export const fetchProduct = async(req , res)=>{
+    try {
+        const { product_barcode } = req.params
+        if(!product_barcode.trim()){return apiErrorResponce(res, "Product not found", null, 404)}
+
+        const product = await Product.findOne({ product_barcode : product_barcode, deleted: false })
+
+        if(!product){return apiErrorResponce(res , "no product found", null, 404)} 
+
+        return apiSucessResponce(res , "Product found successfully" , product )
+
+    } catch (error) {
+        console.log("Error in fetchProduct controller",error)
+        apiErrorResponce(res , "internal server error" , error)
+    }
+}
 
 
 
@@ -135,40 +151,4 @@ export const fetchAllProduct = async(req , res)=>{
     }
 }
 
-export const fetchProduct = async(req , res)=>{
-    try {
-        const {id} = req.params
-        if(!validateMongooseId(id)){return apiErrorResponce(res, "no product found", null, 404)}
-
-        const selectedValues = [
-            "product_brand", "product_barcode", 
-            "product_name", "product_UOM",
-            "product_total_stock", "product_net_unit",
-            "product_out_of_stock", "product_min_order_quantity",
-            "product_max_order_quantity", "product_photos",
-            "product_additional_photos", "product_hsn_code",
-            "product_description", "product_highlights",
-            "product_user_ratings", "product_user_review",
-            "product_varient", "FAQ", 
-            "product_offer", "product_stock.batch_no", 
-            "product_stock.stock", "product_stock.quantity", 
-            "product_stock.manufacture_date", "product_stock.expire_date", 
-            "product_stock.best_before", "product_stock.mrp", 
-            "product_stock.price", "product_stock.hidden"
-        ]
-        const product = await Product.findOne({
-            _id : id,
-            hidden: false,
-            deleted: false
-        }).select(selectedValues)
-
-        if(!product){return apiErrorResponce(res , "no product found", null, 404)} 
-
-        return apiSucessResponce(res , "products found successfully" , product )
-
-    } catch (error) {
-        console.log("Error in fetchProduct controller",error)
-        apiErrorResponce(res , "internal server error" , error)
-    }
-}
 

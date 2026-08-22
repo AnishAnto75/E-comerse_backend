@@ -42,7 +42,7 @@ export const createOrder = async(req , res)=>{
 
         for (const cartItem of cart.products) {
 
-            const product = await Product.findOne({_id : cartItem.product_id , deleted : false , status: "active", out_of_stock: false})
+            const product = await Product.findOne({_id : cartItem.product_id , deleted : false , status: "active" })
             .select("deleted status product_name product_barcode product_UOM product_photo product_min_order_quantity product_max_order_quantity current_stock")
             .session(session)
             if (!product) {throw new Error(`Product not found.`) }
@@ -140,7 +140,8 @@ export const createOrder = async(req , res)=>{
                 payment_method: order.payment.method,
                 notes: `Payment received for order '${order.order_id}'`,
                 reference_no: order.order_id,
-                order_id: order._id
+                order_id: order._id,
+                transaction_date: new Date()
             }
             const transaction = new Transaction(transactionData);
             await transaction.save({ session });
