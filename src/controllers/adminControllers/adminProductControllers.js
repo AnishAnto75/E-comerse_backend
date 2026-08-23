@@ -370,6 +370,7 @@ export const adminFetchProductView = async (req, res) => {
                     latest_batch_details: 1,
                     search_keywords: 1,
                     status: 1,
+                    history: 1,
                     inventory: {
                         _id: "$inventory._id",
                         low_in_stock: "$inventory.product_low_in_stock",
@@ -522,6 +523,145 @@ export const createProduct = async(req , res)=>{
         return apiErrorResponce(res , "internal Server Error")
     } finally { session.endSession() }
 }
+
+export const adminEditProduct = async (req, res) => {
+    const session = await mongoose.startSession();
+
+    try {
+        const { barcode } = req.params
+        const staffId = req.user._id
+
+        if (!barcode) { return apiErrorResponce( res, "Product ID is required.", null, 400 )}
+
+        await session.startTransaction()
+
+        const product = await Product.findOne({ product_barcode: barcode, deleted: false }).session(session)
+
+        if (!product) { await session.abortTransaction(); return apiErrorResponce( res, "Product not found.", null, 404 )}
+
+        const allowedFields = [
+            "product_group",
+            "product_category",
+            "product_brand",
+            "product_name",
+            "product_UOM",
+            "product_net_unit",
+            "product_min_order_quantity",
+            "product_max_order_quantity",
+            "product_hsn_code",
+            "product_description",
+            "product_highlights",
+            "search_keywords",
+            "status"
+        ]
+
+        const objectIdFields = [
+            "product_group",
+            "product_category",
+            "product_brand"
+        ]
+
+        const changes = {}
+        const updateData = {}
+
+        for (const field of allowedFields) {
+            if (req.body[field] === undefined) { continue }
+
+            const oldValue = product[field]
+            let newValue = req.body[field]
+
+            if (objectIdFields.includes(field)) {
+                if ( typeof newValue !== "string" || !mongoose.Types.ObjectId.isValid(newValue)) { await session.abortTransaction(); return apiErrorResponce( res, `Invalid ${field}.`, null, 400 )}
+                newValue = new mongoose.Types.ObjectId(newValue)
+            }
+            if ([ "product_highlights", "search_keywords" ].includes(field)) { if (!Array.isArray(newValue)) { await session.abortTransaction(); return apiErrorResponce( res, `${field} must be an array.`, null, 400 )}}
+            if ( field === "product_min_order_quantity" || field === "product_max_order_quantity") { if ( !Number.isInteger(newValue) || newValue < 1 ) { await session.abortTransaction(); return apiErrorResponce( res, `${field} must be a positive integer.`, null, 400 )}}
+            if (field === "product_net_unit") { if ( typeof newValue !== "number" || !Number.isFinite(newValue) || newValue <= 0 ) { await session.abortTransaction(); return apiErrorResponce( res, "Product net unit must be greater than 0.", null, 400 )}}
+
+            const oldComparable = oldValue instanceof mongoose.Types.ObjectId ? oldValue.toString() : oldValue
+            const newComparable = newValue instanceof mongoose.Types.ObjectId ? newValue.toString() : newValue
+
+            const isChanged = JSON.stringify(oldComparable) !== JSON.stringify(newComparable);
+
+            if (!isChanged) { continue }
+            changes[field] = { 
+                old: oldValue,
+                new: newValue
+            }
+            updateData[field] = newValue;
+        }
+
+        if (Object.keys(changes).length === 0) { await session.abortTransaction(); return apiSucessResponce( res, "No changes detected.", null, 200 )}
+
+        const finalMinQty = updateData.product_min_order_quantity ?? product.product_min_order_quantity
+        const finalMaxQty = updateData.product_max_order_quantity ?? product.product_max_order_quantity
+
+        if ( !Number.isInteger(finalMinQty) || finalMinQty < 1 ) { await session.abortTransaction(); return apiErrorResponce( res, "Minimum order quantity must be a positive integer.", null, 400 )}
+        if ( !Number.isInteger(finalMaxQty) || finalMaxQty < 1 ) { await session.abortTransaction(); return apiErrorResponce( res, "Maximum order quantity must be a positive integer.", null, 400 )}
+        if ( finalMinQty > finalMaxQty ) { await session.abortTransaction(); return apiErrorResponce( res, "Minimum order quantity cannot be greater than maximum order quantity.", null, 400 )}
+
+        const finalGroupId = updateData.product_group ?? product.product_group
+        const finalCategoryId = updateData.product_category ?? product.product_category
+        const finalBrandId = updateData.product_brand ?? product.product_brand
+
+        const [group, category, brand] = await Promise.all([
+            ProductGroup.findOne({ _id: finalGroupId, deleted: false })
+                .select("_id")
+                .session(session)
+                .lean(),
+
+            ProductCategory.findOne({ _id: finalCategoryId, deleted: false })
+                .select("_id group_id")
+                .session(session)
+                .lean(),
+
+            ProductBrand.findOne({ _id: finalBrandId, deleted: false})
+                .select("_id")
+                .session(session)
+                .lean()
+        ])
+
+        if (!group) { await session.abortTransaction(); return apiErrorResponce( res, "Selected product group not found or has been deleted.", null, 400 )}
+        if (!category) { await session.abortTransaction(); return apiErrorResponce( res, "Selected product category not found or has been deleted.", null, 400 )}
+        if (!brand) { await session.abortTransaction(); return apiErrorResponce( res, "Selected product brand not found or has been deleted.", null, 400 )}
+        if ( category.group_id.toString() !== finalGroupId.toString() ) { await session.abortTransaction(); return apiErrorResponce( res, "Selected category does not belong to the selected product group.", null, 400 )}
+
+        const historyEntry = {
+            action: "update",
+            updated_by: staffId,
+            updated_at: new Date(),
+            changes
+        }
+
+        // __v is used as an optimistic concurrency check.
+        // If another admin changes the product after we read it,
+        // __v will no longer match and this update will fail.
+
+        const updatedProduct = await Product.findOneAndUpdate({ product_barcode: barcode, deleted: false, __v: product.__v },
+            { $set: updateData, $push: { history: historyEntry }, $inc: { __v: 1 }},
+            { session, returnDocument: "after", runValidators: true }
+        )
+
+        if (!updatedProduct) { await session.abortTransaction(); return apiErrorResponce( res, "Product was modified by another user. Please refresh and try again.", null, 409 )}
+        await session.commitTransaction()
+
+        return apiSucessResponce( res, "Product updated successfully.", updatedProduct, 200 )
+
+    } catch (error) {
+
+        if (session.inTransaction()) { await session.abortTransaction() }
+        console.error( "Error in adminEditProduct:", error )
+
+        if (error.code === 11000) { return apiErrorResponce( res, "Product barcode already exists.", null, 409 )}
+        if (error.name === "ValidationError") { return apiErrorResponce( res, "Invalid product data.", error.message, 400 )}
+        if (error.name === "CastError") { return apiErrorResponce( res, "Invalid product data.", null, 400 )}
+
+        return apiErrorResponce( res, "Internal Server Error.", null, 500 )
+
+    } finally { await session.endSession() }
+}
+
+
 
 
 // testing controller

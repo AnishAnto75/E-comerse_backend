@@ -33,20 +33,20 @@ export const addToCart = async (req, res) => {
 
             let newQuantity = existingProduct.quantity + quantity;
 
-            newQuantity = Math.max( product.product_min_order_quantity, newQuantity )
+            newQuantity = Math.max( product.product_min_order_quantity, newQuantity)
             newQuantity = Math.min(product.product_max_order_quantity, newQuantity)
             newQuantity = Math.min(inventory.product_total_stock, newQuantity)
 
-            existingProduct.quantity = newQuantity;
-            updatedQuantity = newQuantity;
+            existingProduct.quantity = newQuantity
+            updatedQuantity = newQuantity
 
         } else {
 
-            let newQuantity = quantity;
+            let newQuantity = quantity
             
-            newQuantity = Math.max( product.product_min_order_quantity, newQuantity );
-            newQuantity = Math.min(product.product_max_order_quantity, newQuantity);
-            newQuantity = Math.min(inventory.product_total_stock, newQuantity);
+            newQuantity = Math.max( product.product_min_order_quantity, newQuantity)
+            newQuantity = Math.min(product.product_max_order_quantity, newQuantity)
+            newQuantity = Math.min(inventory.product_total_stock, newQuantity)
 
             cart.products.push({ product_id, quantity : newQuantity });
             updatedQuantity = newQuantity;
@@ -80,10 +80,10 @@ export const minusToCart = async (req, res) => {
         const existingProduct = cart.products.find( item => item.product_id.toString() === product_id);
         if (!existingProduct) { return apiErrorResponce(res, "Product not found in cart");}
 
-        let newQuantity = existingProduct.quantity - 1;
+        let newQuantity = existingProduct.quantity - 1
         if (newQuantity < product.product_min_order_quantity) { return apiErrorResponce(res, `Minimum quantity is ${product.product_min_order_quantity}`)}
 
-        existingProduct.quantity = newQuantity;
+        existingProduct.quantity = newQuantity
         await cart.save();
 
         return apiSucessResponce(res, "Cart Updated" , { product_id, updated_quantity: newQuantity , cartCount: cart.products.length });
@@ -92,7 +92,7 @@ export const minusToCart = async (req, res) => {
         console.log("Error in addToCart:", error);
         return apiErrorResponce(res, "Internal Server Error");
     } 
-};
+}
 
 export const removeProductFromCart = async (req, res) => {
 
@@ -111,15 +111,15 @@ export const removeProductFromCart = async (req, res) => {
 
         cart.products = cart.products.filter( item => item.product_id.toString() !== product_id);
 
-        await cart.save();
+        await cart.save()
 
         return apiSucessResponce(res, "Product removed from cart", { product_id, cartCount: cart.products.length });
 
     } catch (error) {
-        console.log("removeProductFromCart:", error);
-        return apiErrorResponce(res, "Internal Server Error");
+        console.log("removeProductFromCart:", error)
+        return apiErrorResponce(res, "Internal Server Error")
     } 
-};
+}
 
 export const fetchCartSummary = async(req , res)=>{
     try {
@@ -182,7 +182,7 @@ export const fetchFullCart = async(req , res)=>{
         console.log("fetchFullCart controller :", error);
         return apiErrorResponce( res, "Internal Server Error" );
     }
-};
+}
 
 
 

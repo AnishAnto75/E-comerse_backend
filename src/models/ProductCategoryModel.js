@@ -16,15 +16,10 @@ const productCategorySchema = mongoose.Schema({
 
 },{timestamps:true})
 
-
 productCategorySchema.index(
-    {
-        group_id: 1, category_name: 1, deleted: 1,
-    },
-    { 
-        unique: true,
-    }
-);
+    { group_id: 1, category_name: 1, deleted: 1 },
+    { unique: true }
+)
 
 productCategorySchema.index({
     group_id: 1,

@@ -56,8 +56,15 @@ const productSchema = mongoose.Schema({
     search_keywords: { type: [String], default: []},
     status: { type: String, enum : ['active', 'inactive', 'out_of_stock'], default: "active" },
     deleted : {type: Boolean, default: false},
-    history: { type: mongoose.Schema.Types.Mixed, default: {}}
-    
+    history: {
+        type: [{
+            action: { type: String, enum: [ "update", "delete" ], required: true },
+            updated_by: { type: mongoose.SchemaTypes.ObjectId, ref: "Staff" },
+            updated_at: { type: Date, default: Date.now },
+            changes: { type: mongoose.Schema.Types.Mixed,default: {} }
+        }],
+        default: []
+    }
 },{ timestamps : true }
 )
 
