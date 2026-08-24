@@ -3,7 +3,7 @@ import express from "express";
 import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
-import { adminEditProduct, adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForProductPage, adminFetchProductByCategory, adminFetchProductPage, adminFetchProductPreview, adminFetchProductView, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
+import { adminEditProduct, adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForEditProductPage, adminFetchForProductPage, adminFetchProductByCategory, adminFetchProductPage, adminFetchProductPreview, adminFetchProductView, adminSearchProducts, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminCreateStaff, adminFetchAllStaffs, adminFetchPreviewStaff, adminFetchStaff, adminFetchStaffPage } from "../controllers/adminControllers/adminStaffController.js";
 import { adminBlockUser, adminFetchAllCustomer, adminFetchCustomerPreviewPage, adminFetchCustomersPage, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
@@ -32,6 +32,8 @@ router.get('/product/product_id/:barcode', adminFetchProductView)
 router.get('/product/fetch-for-create-product', adminFetchForCreateProductPage)
 router.get('/product/fetch-categories-for-create-product/:id', adminFetchCategoriesForCreateProductPage)
 router.post('/product/add-product' , verifyUser, uploadProductImage.fields([{ name: "product_photo", maxCount: 1 },{ name: "product_additional_photos", maxCount: 5 }]), createProduct)
+
+router.get('/product/fetch-for-edit-product/:barcode', adminFetchForEditProductPage)
 router.put( "/product/edit/:barcode", verifyUser, adminEditProduct )
 
 router.get('/product/all' , verifyUser, adminFetchAllProduct)                           // testing controller

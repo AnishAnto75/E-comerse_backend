@@ -372,11 +372,11 @@ export const adminFetchProductView = async (req, res) => {
                     status: 1,
                     history: 1,
                     inventory: {
-                        _id: "$inventory._id",
-                        low_in_stock: "$inventory.product_low_in_stock",
-                        total_stock: "$inventory.product_total_stock",
-                        batches: "$inventory.product_stock",
-                        updated_at: "$inventory.updatedAt"
+                        _id: { $ifNull: [ "$inventory._id", null ]},
+                        low_in_stock: { $ifNull: [ "$inventory.product_low_in_stock", false ]},
+                        total_stock: { $ifNull: [ "$inventory.product_total_stock", 0 ]},
+                        batches: { $ifNull: [ "$inventory.product_stock", [] ]},
+                        updated_at: { $ifNull: [ "$inventory.updatedAt", null ]}
                     },
                     createdAt: 1,
                     updatedAt: 1
@@ -524,6 +524,30 @@ export const createProduct = async(req , res)=>{
     } finally { session.endSession() }
 }
 
+export const adminFetchForEditProductPage = async (req, res) => {
+    try {
+        const { barcode } = req.params
+
+        if ( !barcode || typeof barcode !== "string" || !barcode.trim() ) { return apiErrorResponce( res, "Product barcode is required.", null, 400 )}
+
+        const cleanBarcode = barcode.trim()
+
+        const [groups, categories, brands, product] = await Promise.all([
+            ProductGroup.find({ deleted: false }).select("_id group_name").sort({ group_name: 1 }).lean(),
+            ProductCategory.find({ deleted: false }).select("_id category_name group_id").sort({ category_name: 1 }).lean(),
+            ProductBrand.find({deleted: false }).select("_id brand_name").sort({ brand_name: 1 }).lean(),
+            Product.findOne({ product_barcode: cleanBarcode, deleted: false }).select(` product_group product_category product_brand product_barcode product_name product_UOM product_net_unit product_min_order_quantity product_max_order_quantity product_hsn_code product_description product_highlights search_keywords status `).lean()
+        ])
+
+        if (!product) { return apiErrorResponce( res, "Product not found.", null, 404 )}
+        return apiSucessResponce( res, "Product edit data fetched successfully.", { groups, categories, brands, product }, 200 )
+
+    } catch (error) {
+        console.error( "Error in adminFetchForEditProductPage:", error )
+        return apiErrorResponce( res, "Internal Server Error.", null, 500 )
+    }
+}
+
 export const adminEditProduct = async (req, res) => {
     const session = await mongoose.startSession();
 
@@ -633,9 +657,7 @@ export const adminEditProduct = async (req, res) => {
             changes
         }
 
-        // __v is used as an optimistic concurrency check.
-        // If another admin changes the product after we read it,
-        // __v will no longer match and this update will fail.
+        // __v is used as an optimistic concurrency check, If another admin changes the product after we read it, __v will no longer match and this update will fail.
 
         const updatedProduct = await Product.findOneAndUpdate({ product_barcode: barcode, deleted: false, __v: product.__v },
             { $set: updateData, $push: { history: historyEntry }, $inc: { __v: 1 }},
@@ -643,6 +665,22 @@ export const adminEditProduct = async (req, res) => {
         )
 
         if (!updatedProduct) { await session.abortTransaction(); return apiErrorResponce( res, "Product was modified by another user. Please refresh and try again.", null, 409 )}
+
+        await RecentActivity.create([{
+            performed_by: req.user._id,
+            activity_type: "product",
+            action: "updated",
+            title: "Product updated",
+            description: `Product "${updatedProduct.product_name}" has been updated successfully.`,
+            reference_id: updatedProduct._id,
+            reference_model: "Product",
+            metadata: {
+                product_id: updatedProduct._id,
+                updated_by: req.user.name,
+                changes
+            }
+        }], { session })
+
         await session.commitTransaction()
 
         return apiSucessResponce( res, "Product updated successfully.", updatedProduct, 200 )
