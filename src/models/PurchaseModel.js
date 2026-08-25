@@ -11,7 +11,7 @@ const purchaseSchema = mongoose.Schema({
         batch_no: { type: String, default: "" },
         free_received : {type: Number, default: 0, min: 0 },
         quantity_received : {type: Number, required: true, min: 1 },
-        size: {type: String, default: ""},
+        size: {type: Number, default: null},
         manufacture_date: { type: Date, default: null },
         expiry_date : { type: Date, default: null},
         best_before: { type: Number, default: "" },

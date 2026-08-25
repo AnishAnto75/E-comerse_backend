@@ -383,16 +383,15 @@ export const adminSearchSuppliersForCreatePurchase = async (req, res) => {
         console.error(error);
         return apiErrorResponce(res, "failed to search Supplier")
     }
-};
+}
 
 export const adminSearchProductsForCreatePurchase = async (req, res) => {
     try {
-        const { query } = req.query;
+        const { query } = req.query
         
         const escapedQuery = query?.replace( /[.*+?^${}()|[\]\\]/g, "\\$&");
 
         if (!escapedQuery?.trim()) { return apiSucessResponce(res, "product fetched successfully", [] , 200)}
-        
 
         // Search by name or barcode
         const products = await Product.find({ 
@@ -412,8 +411,7 @@ export const adminSearchProductsForCreatePurchase = async (req, res) => {
         console.error(error);
         return apiErrorResponce(res, "failed to search product")
     }
-};
-
+}
 
 
 

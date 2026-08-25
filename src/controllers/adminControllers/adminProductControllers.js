@@ -699,6 +699,124 @@ export const adminEditProduct = async (req, res) => {
     } finally { await session.endSession() }
 }
 
+export const adminAddProductFAQs = async (req, res) => {
+    const session = await mongoose.startSession()
+
+    try {
+        const { barcode } = req.params
+        const staffId = req.user._id
+        const { faqs } = req.body
+
+        if (!barcode?.trim()) { return apiErrorResponce( res, "Product barcode is required.", null, 400 )}
+        if (!Array.isArray(faqs) || faqs.length === 0) { return apiErrorResponce( res, "At least one FAQ is required.", null, 400 )}
+
+        const formattedFAQs = []
+
+        for (let i = 0; i < faqs.length; i++) {
+            const faq = faqs[i]
+            if ( !faq || typeof faq !== "object") { return apiErrorResponce( res, `FAQ at index ${i} is invalid.`, null, 400 )}
+            if ( typeof faq.question !== "string" || !faq.question.trim()) { return apiErrorResponce( res, `FAQ question is required at index ${i}.`, null, 400 )}
+            if ( typeof faq.answer !== "string" || !faq.answer.trim() ) { return apiErrorResponce( res, `FAQ answer is required at index ${i}.`, null, 400 )}
+
+            formattedFAQs.push({
+                question: faq.question.trim(),
+                answer: faq.answer.trim()
+            })
+        }
+
+        const requestQuestions = formattedFAQs.map( faq => faq.question.toLowerCase() )
+        const uniqueQuestions = new Set(requestQuestions)
+
+        if (uniqueQuestions.size !== requestQuestions.length) { return apiErrorResponce( res, "Duplicate FAQ questions are not allowed.", null, 409 )}
+
+        await session.startTransaction()
+
+        const product = await Product.findOne({ product_barcode: barcode.trim(), deleted: false }).session(session)
+
+        if (!product) { await session.abortTransaction(); return apiErrorResponce( res, "Product not found.", null, 404 )}
+
+        const existingQuestions = new Set( (product.faqs || []).map( faq => faq.question.trim().toLowerCase() ))
+        const duplicateWithExisting = formattedFAQs.find( faq => existingQuestions.has( faq.question.toLowerCase() ))
+
+        if (duplicateWithExisting) { await session.abortTransaction(); return apiErrorResponce( res, `FAQ already exists: "${duplicateWithExisting.question}"`, null, 409 )}
+
+        const historyEntry = {
+            action: "update",
+            updated_by: staffId,
+            updated_at: new Date(),
+            changes: {
+                faqs: {
+                    old : "add",
+                    new : formattedFAQs
+                }
+            }
+        }
+
+        const updatedProduct = await Product.findOneAndUpdate({ product_barcode: barcode.trim(), deleted: false, __v: product.__v },
+            { 
+                $push: {
+                    faqs: { $each: formattedFAQs},
+                    history: historyEntry
+                },
+                $inc: { __v: 1 }
+            },
+            {
+                session,
+                returnDocument: "after",
+                runValidators: true
+            }
+        )
+
+        if (!updatedProduct) { await session.abortTransaction(); return apiErrorResponce( res, "Product was modified by another user. Please refresh and try again.", null, 409 )}
+
+        await session.commitTransaction()
+
+        return apiSucessResponce( res, `${formattedFAQs.length} FAQ(s) added successfully.`, { product_id: updatedProduct._id, product_barcode: updatedProduct.product_barcode, faqs: formattedFAQs }, 201 )
+
+    } catch (error) {
+        if (session.inTransaction()) { await session.abortTransaction() }
+        console.error( "Error in adminAddProductFAQs:", error )
+        if (error.name === "ValidationError") { return apiErrorResponce( res, "Invalid FAQ data.", error.message, 400 )}
+        if (error.name === "CastError") { return apiErrorResponce( res, "Invalid product data.", null, 400 )}
+        return apiErrorResponce( res, "Internal Server Error.", null, 500 )
+    } finally {
+        await session.endSession()
+    }
+}
+
+export const adminSearchProductsForAddVarient = async (req, res) => {
+    try {
+        const { query } = req.query
+        
+        const escapedQuery = query?.replace( /[.*+?^${}()|[\]\\]/g, "\\$&");
+
+        if (!escapedQuery?.trim()) { return apiSucessResponce(res, "product fetched successfully", [] , 200)}
+
+        // Search by name or barcode
+        const products = await Product.find({ 
+            deleted: false,
+            $or: [ 
+                { product_name: {$regex: escapedQuery, $options: "i"}}, 
+                { product_barcode: { $regex: escapedQuery, $options: "i"}}, 
+                { search_keywords: { $regex: escapedQuery, $options: "i"}} 
+            ]
+        })
+        .select( "_id product_name product_barcode product_photo.url")
+        .limit(10)
+        .lean()
+
+        return apiSucessResponce(res, "product fetched successfully", products, 200)
+    } catch (error) {
+        console.error(error)
+        return apiErrorResponce(res, "failed to search product")
+    }
+}
+
+
+
+
+
+
 
 
 

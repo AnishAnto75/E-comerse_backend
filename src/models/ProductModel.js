@@ -19,7 +19,7 @@ const productSchema = mongoose.Schema({
         required: true,
     },
     product_additional_photos : [
-        { 
+        {
             url: { type: String, default: ""},
             public_id: { type: String, default: ""}
         }
@@ -27,10 +27,7 @@ const productSchema = mongoose.Schema({
     product_description : { type : String, default: null },
     product_highlights:{ type:[String], default:[] },
     product_added_by : { type : mongoose.SchemaTypes.ObjectId, ref: "Staff", required: true },
-    product_varient : [{
-        product_id : { type: mongoose.SchemaTypes.ObjectId, ref: 'Product', required: true },
-        varient_name : { type: String, required: true }
-    }],
+    product_variant_group_id : { type : mongoose.SchemaTypes.ObjectId, ref: "ProductVariantGroup", default: null },
     product_review_id: { type : mongoose.SchemaTypes.ObjectId, ref : "ProductReview" },
     faqs: {
         type: [{
@@ -42,7 +39,7 @@ const productSchema = mongoose.Schema({
     current_stock: { type: Number, default: 0 },
     latest_batch_details: {
         batch_no : { type: String, default: "" },
-        size: {type: String, default: "" },
+        size: {type: Number, default: null },
         manufacture_date: { type: Date, default: null},
         expiry_date: { type: Date, default: null },
         best_before: { type: Number, default: 0 },
@@ -61,7 +58,7 @@ const productSchema = mongoose.Schema({
             action: { type: String, enum: [ "update", "delete" ], required: true },
             updated_by: { type: mongoose.SchemaTypes.ObjectId, ref: "Staff" },
             updated_at: { type: Date, default: Date.now },
-            changes: { type: mongoose.Schema.Types.Mixed,default: {} }
+            changes: { type: mongoose.Schema.Types.Mixed, default: {} }
         }],
         default: []
     }

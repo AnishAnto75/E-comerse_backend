@@ -8,7 +8,7 @@ const productInventorySchema = mongoose.Schema({
         purchase_id : { type: mongoose.SchemaTypes.ObjectId, ref: "Purchase" , required: true },
         batch_no: { type: String, default: "" },
         stock: {type: Number, min:[0, 'Must be at least 0, got {VALUE}'], required: true },
-        size: {type: String, default: "" },
+        size: {type: Number, default: null },
         manufacture_date: { type: Date, default: null},
         expiry_date: { type: Date, default: null },
         best_before: { type: Number, default: 0 },
