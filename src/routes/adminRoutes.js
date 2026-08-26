@@ -3,7 +3,7 @@ import express from "express";
 import verifingAdmin from "../middlewares/verifingAdmin.js";
 import verifyUser from "../middlewares/verifyUser.js";
 
-import { adminAddProductFAQs, adminEditProduct, adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForEditProductPage, adminFetchForProductPage, adminFetchProductByCategory, adminFetchProductPage, adminFetchProductPreview, adminFetchProductView, adminSearchProducts, adminSearchProductsForAddVarient, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
+import { adminAddProductFAQs, adminEditProduct, adminEditProductInventoryBatch, adminFetchAllProduct, adminFetchCategoriesForCreateProductPage, adminFetchForCreateProductPage, adminFetchForEditProductPage, adminFetchForProductPage, adminFetchProductByCategory, adminFetchProductPage, adminFetchProductPreview, adminFetchProductView, adminSearchProducts, adminSearchProductsForAddVarient, createProduct } from "../controllers/adminControllers/adminProductControllers.js";
 import { adminCreateStaff, adminFetchAllStaffs, adminFetchPreviewStaff, adminFetchStaff, adminFetchStaffPage } from "../controllers/adminControllers/adminStaffController.js";
 import { adminBlockUser, adminFetchAllCustomer, adminFetchCustomerPreviewPage, adminFetchCustomersPage, adminFetchForCustomerPage, adminUnBlockUser, fetchAdminCustomer, fetchCustomerByIdForCustomerPage } from "../controllers/adminControllers/adminCustomerController.js";
 import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, adminDeliverOrder, adminOutOrder, adminCancelOrder, fetchAllAdminOrder, adminFetchOrderPage } from "../controllers/adminControllers/adminOrderController.js";
@@ -36,8 +36,9 @@ router.post('/product/add-product' , verifyUser, uploadProductImage.fields([{ na
 router.get('/product/fetch-for-edit-product/:barcode', adminFetchForEditProductPage)
 router.put( "/product/edit/:barcode", verifyUser, adminEditProduct )
 
-router.post('/product/add-faqs/:barcode' , verifyUser, adminAddProductFAQs)
+router.patch( "/product/inventory/:product_id/batch/:batch_id", verifyUser, adminEditProductInventoryBatch )
 
+router.post('/product/add-faqs/:barcode' , verifyUser, adminAddProductFAQs)
 router.get('/product/add-varient/search-products/' , verifyUser, adminSearchProductsForAddVarient)
 
 router.get('/product/all' , verifyUser, adminFetchAllProduct)                           // testing controller

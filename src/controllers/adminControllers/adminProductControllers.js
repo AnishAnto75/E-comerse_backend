@@ -784,6 +784,142 @@ export const adminAddProductFAQs = async (req, res) => {
     }
 }
 
+export const adminEditProductInventoryBatch = async (req, res) => {
+
+    const session = await mongoose.startSession()
+
+    try {
+        const { product_id, batch_id } = req.params
+        const staffId = req.user._id
+
+        if (!product_id) { return apiErrorResponce( res, "Product ID is required.", null, 400 )}
+        if (!mongoose.Types.ObjectId.isValid(product_id)) { return apiErrorResponce( res, "Invalid product ID.", null, 400 )}
+        if (!batch_id) { return apiErrorResponce( res, "Batch ID is required.", null, 400 )}
+        if (!mongoose.Types.ObjectId.isValid(batch_id)) { return apiErrorResponce( res, "Invalid batch ID.", null, 400 )}
+
+        const { mrp, selling_price, size, manufacture_date, expiry_date, best_before } = req.body
+
+        if ( mrp === undefined && selling_price === undefined && size === undefined && manufacture_date === undefined && expiry_date === undefined && best_before === undefined ) { return apiErrorResponce( res, "No fields provided for update.", null, 400 )}
+        if ( mrp !== undefined && ( typeof mrp !== "number" || !Number.isFinite(mrp) || mrp < 0 )) { return apiErrorResponce( res, "MRP must be a valid number greater than or equal to 0.", null, 400 )}
+        if ( selling_price !== undefined && ( typeof selling_price !== "number" || !Number.isFinite(selling_price) || selling_price < 0 )) { return apiErrorResponce( res, "Selling price must be a valid number greater than or equal to 0.", null, 400 )}
+        if ( size !== undefined && size !== null && ( typeof size !== "number" || !Number.isFinite(size) || size < 0 )) { return apiErrorResponce( res, "Size must be a valid number greater than or equal to 0.", null, 400 )}
+        if ( best_before !== undefined && ( typeof best_before !== "number" || !Number.isFinite(best_before) || best_before < 0 )) { return apiErrorResponce( res, "Best before must be a valid number greater than or equal to 0.", null, 400 )}
+
+        let manufactureDate = undefined
+        if ( manufacture_date !== undefined && manufacture_date !== null && manufacture_date !== "" ) {
+            manufactureDate = new Date(manufacture_date)
+            if (Number.isNaN(manufactureDate.getTime())) { return apiErrorResponce( res, "Invalid manufacture date.", null, 400 )}
+        }
+
+        let expiryDate = undefined
+        if ( expiry_date !== undefined && expiry_date !== null && expiry_date !== "" ) {
+            expiryDate = new Date(expiry_date)
+            if (Number.isNaN(expiryDate.getTime())) { return apiErrorResponce( res, "Invalid expiry date.", null, 400 )}
+        }
+
+        session.startTransaction()
+
+        const inventory = await ProductInventory.findOne({ product_id, deleted: false }).session(session)
+        if (!inventory) { await session.abortTransaction(); return apiErrorResponce( res, "Product inventory not found.", null, 404 )}
+
+        const batch = inventory.product_stock.id(batch_id) 
+        if (!batch) { await session.abortTransaction(); return apiErrorResponce( res, "Inventory batch not found.", null, 404 )}
+
+        const finalMrp = mrp !== undefined ? mrp : batch.mrp
+        const finalSellingPrice = selling_price !== undefined ? selling_price : batch.selling_price
+
+        if (finalSellingPrice > finalMrp) { await session.abortTransaction(); return apiErrorResponce( res, "Selling price cannot be greater than MRP.", null, 400 )}
+
+        const finalManufactureDate = manufacture_date !== undefined ? ( manufacture_date === null || manufacture_date === "" ? null : manufactureDate ) : batch.manufacture_date
+        const finalExpiryDate = expiry_date !== undefined ? ( expiry_date === null || expiry_date === "" ? null : expiryDate ) : batch.expiry_date
+
+        if ( finalManufactureDate && finalExpiryDate && finalExpiryDate < finalManufactureDate) { await session.abortTransaction(); return apiErrorResponce( res, "Expiry date cannot be before manufacture date.", null, 400 )}
+
+        const changes = {}
+
+        if ( mrp !== undefined && batch.mrp !== mrp ) {
+            changes.mrp = { old: batch.mrp, new: mrp }
+            batch.mrp = mrp
+        }
+        if ( selling_price !== undefined && batch.selling_price !== selling_price) {
+            changes.selling_price = { old: batch.selling_price, new: selling_price }
+            batch.selling_price = selling_price
+        }
+        if ( size !== undefined && batch.size !== size ) {
+            changes.size = { old: batch.size, new: size}
+            batch.size = size
+        }
+        if (manufacture_date !== undefined) {
+            const oldValue = batch.manufacture_date
+            const newValue = finalManufactureDate
+            const oldTime = oldValue ? new Date(oldValue).getTime() : null
+            const newTime = newValue ? new Date(newValue).getTime() : null
+            if (oldTime !== newTime) {
+                changes.manufacture_date = { old: oldValue, new: newValue }
+                batch.manufacture_date = newValue
+            }
+        }
+        if (expiry_date !== undefined) {
+            const oldValue = batch.expiry_date
+            const newValue = finalExpiryDate
+            const oldTime = oldValue ? new Date(oldValue).getTime() : null 
+            const newTime = newValue ? new Date(newValue).getTime() : null
+            if (oldTime !== newTime) {
+                changes.expiry_date = { old: oldValue, new: newValue}
+                batch.expiry_date = newValue
+            }
+        }
+        if ( best_before !== undefined && batch.best_before !== best_before) {
+            changes.best_before = { old: batch.best_before, new: best_before }
+            batch.best_before = best_before
+        }
+
+        if (Object.keys(changes).length === 0) { await session.abortTransaction(); return apiErrorResponce( res, "No changes detected.", null, 400 )}
+
+        batch.history.push({
+            action: "update",
+            updated_by: staffId,
+            updated_at: new Date(),
+            changes
+        })
+
+        await inventory.save({ session })
+
+        await RecentActivity.create([
+            {
+                performed_by: staffId,
+                activity_type: "inventory",
+                action: "batch_updated",
+                title: "Inventory batch updated",
+                description: `Inventory batch ${batch.batch_no || batch._id} was updated.`,
+                reference_id: inventory._id,
+                reference_model: "ProductInventory",
+                metadata: {
+                    product_id: inventory.product_id,
+                    batch_id: batch._id,
+                    batch_no: batch.batch_no,
+                    purchase_id: batch.purchase_id,
+                    changes
+                },
+                viewed: false,
+                deleted: false
+            }
+        ], { session} )
+
+        await session.commitTransaction()
+        return apiSucessResponce( res, "Inventory batch updated successfully.", { batch, changes }, 200 )
+
+    } catch (error) {
+        if (session.inTransaction()) { await session.abortTransaction() }
+        console.error( "adminEditProductInventoryBatch Error:", error)
+        return apiErrorResponce( res, "Something went wrong while updating the inventory batch.", null, 500 )
+    } finally {
+        await session.endSession()
+    }
+}
+
+
+
 export const adminSearchProductsForAddVarient = async (req, res) => {
     try {
         const { query } = req.query

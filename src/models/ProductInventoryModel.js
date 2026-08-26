@@ -18,11 +18,27 @@ const productInventorySchema = mongoose.Schema({
         other_expenses : { type : Number, required: true, min: 0 },
         unit_purchase_cost : { type : Number, required: true, min: 0 },              // with gst and other expenses
         selling_price: { type : Number, required: true, min: 0 },
-        history: { type: mongoose.Schema.Types.Mixed, default: {}}
+        history: {
+            type: [{
+                action: { type: String, enum: [ "update", "delete" ], required: true },
+                updated_by: { type: mongoose.SchemaTypes.ObjectId, ref: "Staff" },
+                updated_at: { type: Date, default: Date.now },
+                changes: { type: mongoose.Schema.Types.Mixed, default: {} }
+            }],
+            default: []
+        },
     },{
         timestamps: true
     }],
-    history: { type: mongoose.Schema.Types.Mixed, default: {} },
+    history: {
+        type: [{
+            action: { type: String, enum: [ "update", "delete" ], required: true },
+            updated_by: { type: mongoose.SchemaTypes.ObjectId, ref: "Staff" },
+            updated_at: { type: Date, default: Date.now },
+            changes: { type: mongoose.Schema.Types.Mixed, default: {} }
+        }],
+        default: []
+    },
     deleted : { type:Boolean, default: false},
 },{ timestamps : true }
 )

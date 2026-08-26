@@ -26,6 +26,7 @@ const recentActivitySchema = new mongoose.Schema({
             "stock_added",
             "stock_removed",
             "stock_altered",
+            "batch_updated",
             "status_changed",
             "login",
             "logout"
