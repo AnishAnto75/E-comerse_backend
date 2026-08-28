@@ -3,11 +3,16 @@ import mongoose from "mongoose";
 const orderSchema = mongoose.Schema({
     order_id : { type : String, unique: true, required : true },
     user_id : { type : mongoose.SchemaTypes.ObjectId, ref : 'User', required : true },
+    
     total_mrp:{ type : Number, required : true, min: 1 },
-    total_price:{ type : Number, required : true, min: 1 },
+    total_price:{ type : Number, required : true, min: 1 },                 // total selling price
     delivery_charges : { type : Number, required : true, min: 0 },
-    total_amount : {type : Number, required : true, min: 0},
-    total_gst: { type: Number, required: true, min: 1 },
+    total_gst: { type: Number, required: true, min: 1 },                    // inclusive of total  price
+    total_amount : {type : Number, required : true, min: 0},                // total price + delivery_charge
+
+    total_cost: { type: Number, required: true, min: 0 },                   // total purchase cost
+    gross_profit: { type: Number, required: true, min: 0 },                 // total_amount - total cost
+    
     total_quantity : {type : Number , required : true, min: 1},
     coupon: {
         type: {
@@ -36,7 +41,7 @@ const orderSchema = mongoose.Schema({
     items :{
         type: [{
             product_id: {type : mongoose.SchemaTypes.ObjectId, ref: "Product" ,required : true},
-            inventory_batch_id: {type : mongoose.SchemaTypes.ObjectId, required : true},
+            purchase_id: {type : mongoose.SchemaTypes.ObjectId, ref: "Purchase" ,required : true},
             product_barcode: {type : String, required : true},
             product_name: { type : String, required : true, trim: true },
             product_UOM: { type: String, enum : ['gm','kg','ml','lit','pcs','cap'], required: true },

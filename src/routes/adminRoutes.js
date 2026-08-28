@@ -11,7 +11,7 @@ import { fetchAdminOrder, adminConfirmOrder, adminFetchDeliveryStaffForOut, admi
 import { adminFetchGroupCategoryPage, createProductGroup} from '../controllers/adminControllers/adminProductGroupController.js'
 import { adminFetchGroupsForCreateCategory, createProductCategory, fetchAllProductCategory, fetchCategoriesByGroup } from "../controllers/adminControllers/adminProductCategoryController.js";
 import { adminFetchAllSuppliers, adminFetchSupplier, adminFetchSupplierPage, createSupplier } from "../controllers/adminControllers/adminSupplierController.js";
-import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminFetchPurchasePage, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase } from "../controllers/adminControllers/adminPurchaseController.js";
+import { adminCreatePurchase, adminFetchAllPurchases, adminFetchAllSuppliersForPurchaseBook, adminFetchProductsByBarcodeForPurchaseEntry, adminFetchProductsByNameForPurchaseEntry, adminFetchPurchaseBook, adminFetchPurchasePage, adminSearchProductsForCreatePurchase, adminSearchSuppliersForCreatePurchase, fetchAllAdminPurchases, getpurchase } from "../controllers/adminControllers/adminPurchaseController.js";
 import { createProductBrand , adminEditBrand, fetchBrand, adminSearchBrand, fetchBrandPage} from "../controllers/adminControllers/adminProductBrandController.js";
 import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductImage, uploadStaffImage } from "../middlewares/multer.js";
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
@@ -72,9 +72,10 @@ router.post('/purchase/create-purchase' , verifyUser, adminCreatePurchase)
 router.get('/purchase/create-purchase/fetch-supplier/' , verifyUser, adminSearchSuppliersForCreatePurchase)
 router.get('/purchase/create-purchase/search-products/' , verifyUser, adminSearchProductsForCreatePurchase)
 
+router.get('/purchase/all-purchase' , verifyUser, fetchAllAdminPurchases )                        // testing controllers
+router.get('/purchase/purchase_id/:id' , verifyUser, getpurchase )                        // testing controllers
 
 // Orders
-router.get('/order/all-order' , verifyUser, fetchAllAdminOrder )                        // testing controllers
 router.get('/order/order_page' , verifyUser, adminFetchOrderPage )
 router.get('/order/order_id/:order_id' , verifyUser, fetchAdminOrder )
 router.patch('/order/update/confirmed/:order_id' , verifyUser, adminConfirmOrder )
@@ -82,6 +83,8 @@ router.get('/order/get_staff/out/:term' , verifyUser, adminFetchDeliveryStaffFor
 router.patch("/order/update/out/:order_id" , verifyUser, adminOutOrder )
 router.patch("/order/update/deliver/:order_id" , verifyUser, adminDeliverOrder )
 router.patch("/order/update/cancel/:order_id" , verifyUser, adminCancelOrder )
+
+router.get('/order/all-order' , verifyUser, fetchAllAdminOrder )                        // testing controllers
 
 
 // Staff

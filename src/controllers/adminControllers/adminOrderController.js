@@ -332,11 +332,8 @@ export const adminCancelOrder = async (req, res) => {
 // testing controllers
 export const fetchAllAdminOrder = async(req , res)=>{
     try {
-        const order = await Order.find()
+        const order = await Order.find().sort({createdAt: -1})
 
-        if(!order){
-            throw new Error("Internal Server Error")
-        }
         apiSucessResponce(res , "Orders Fetched Sucessfully" , order)
     } catch (error) {
         console.log("error in fetchAllAdminOrder controller : " ,error)

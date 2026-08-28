@@ -416,6 +416,34 @@ export const adminSearchProductsForCreatePurchase = async (req, res) => {
 
 
 
+// testing
+export const fetchAllAdminPurchases = async(req , res)=>{
+    try {
+        const purchases = await Purchase.find().sort({createdAt : -1})
+
+        apiSucessResponce(res , "purchases Fetched Sucessfully" , {purchases})
+    } catch (error) {
+        console.log("error in fetchAllAdminPurchases controller : " ,error)
+        apiErrorResponce(res , "Internal Server Error" , null , 500)
+    }
+}
+
+export const getpurchase = async(req , res)=>{
+    try {
+        const {id} = req.params
+        console.log(id)
+        const purchase = await Purchase.findOne({_id: id})
+
+        if(!purchase) {return apiErrorResponce(res , "No purchase Found" )}
+
+        return apiSucessResponce(res , "Order Fetched Sucessfully" , purchase )
+    } catch (error) {
+        console.log("error in getPurchase controller : " ,error)
+        return apiErrorResponce(res , "internal server error" , null , 500)
+    }
+}
+
+
 
 
 

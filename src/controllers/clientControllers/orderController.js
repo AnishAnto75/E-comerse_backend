@@ -66,7 +66,7 @@ export const createOrder = async(req , res)=>{
 
             orderItems.push({
                 product_id: product._id,
-                inventory_batch_id: stock._id,
+                purchase_id: stock.purchase_id,
                 product_barcode: product.product_barcode,
                 product_name: product.product_name,
                 product_UOM: product.product_UOM,
@@ -105,20 +105,11 @@ export const createOrder = async(req , res)=>{
                 await updatedInventory.save({ session })
             }
 
-            // if( stock.stock === quantity ){ inventory.product_stock.shift()} 
-            // else { stock.stock -= quantity }
-
-            // inventory.product_total_stock -= quantity
-            // await inventory.save({ session })
-
             await Product.updateOne(
                 { _id: product._id },
                 { $set: { current_stock: updatedInventory.product_total_stock}},
                 { session }
             )
-            
-            // product.current_stock = updatedInventory.product_total_stock
-            // await product.save({ session });
         }
 
         const deliveryCharges = totalSellingPrice < FREE_DELIVERY_LIMIT ? DELIVERY_CHARGE : 0
@@ -133,6 +124,11 @@ export const createOrder = async(req , res)=>{
             delivery_charges: deliveryCharges,
             total_amount: totalAmount,
             total_gst: totalGST,
+
+            // function not written yet
+            total_cost: 0,
+            gross_profit: 0,
+
             total_quantity: totalQuantity,
             delivery_address: {
                 name : address.name,
@@ -184,156 +180,6 @@ export const createOrder = async(req , res)=>{
         await session.endSession()
     }
 }
-
-// export const createOrder = async(req , res)=>{
-    
-//     const session = await mongoose.startSession();
-
-//     const FREE_DELIVERY_LIMIT = 500
-//     const DELIVERY_CHARGE = 40
-
-//     try {
-//         const userId = req.user._id
-//         const { address_id, payment_method } = req.body
-
-//         if (!address_id) return apiErrorResponce(res, "Select a delivery address.")
-//         if (!payment_method) return apiErrorResponce(res, "Select payment method.")
-
-//         if (![ "COD", "UPI", "Card", "Net Banking"].includes(payment_method)) { return apiErrorResponce(res, "Invalid payment method.")}
-
-//         session.startTransaction()
-
-//         const cart = await Cart.findOne({ user_id: userId }).session(session)
-//         if (!cart || cart.products.length === 0) { await session.abortTransaction(); return apiErrorResponce(res, "Cart is empty.")}
-
-//         const address = await AddressModel.findOne({ _id: address_id, user_id: userId }).session(session).lean()
-//         if (!address) { await session.abortTransaction(); return apiErrorResponce(res, "Address not found.")}
-
-//         let totalMRP = 0
-//         let totalSellingPrice = 0
-//         let totalGST = 0
-//         let totalQuantity = 0
-
-//         const orderItems = []
-
-//         for (const cartItem of cart.products) {
-
-//             const product = await Product.findOne({_id : cartItem.product_id , deleted : false , status: "active" })
-//             .select("deleted status product_name product_barcode product_UOM product_photo product_min_order_quantity product_max_order_quantity current_stock")
-//             .session(session)
-//             if (!product) {throw new Error(`Product not found.`) }
-            
-//             if(product.product_min_order_quantity > cartItem.quantity ) {throw new Error(`${product.product_name} min order quantity is ${product.product_min_order_quantity}.`) }
-//             if(product.product_max_order_quantity < cartItem.quantity ) {throw new Error(`${product.product_name} max order quantity is ${product.product_max_order_quantity}.`) }
-
-//             const inventory = await ProductInventory.findOne({ product_id: product._id }).select("product_stock product_total_stock").session(session);
-//             if (!inventory) throw new Error( `${product.product_name} inventory missing.`)
-
-//             if ( inventory.product_stock.length === 0) throw new Error( `${product.product_name} is out of stock.`);
-
-//             const stock = inventory.product_stock[0]
-//             if (stock.stock < cartItem.quantity) { throw new Error( `${product.product_name} have only limited stock.`)}
-
-//             const subtotal = stock.selling_price * cartItem.quantity
-//             const gstAmount = subtotal * stock.gst_percentage / 100
-
-//             orderItems.push({
-//                 product_id: product._id,
-//                 inventory_batch_id: stock._id,
-//                 product_barcode: product.product_barcode,
-//                 product_name: product.product_name,
-//                 product_UOM: product.product_UOM,
-//                 product_photo: product.product_photo.url,
-//                 batch_no: stock.batch_no,
-//                 size: stock.size,
-//                 manufacture_date: stock.manufacture_date,
-//                 expiry_date: stock.expiry_date,
-//                 mrp: stock.mrp,
-//                 unit_price: stock.selling_price,
-//                 subtotal, 
-//                 gst_percentage: stock.gst_percentage,
-//                 quantity: cartItem.quantity
-//             });
-
-//             totalMRP += stock.mrp * cartItem.quantity;
-//             totalSellingPrice += subtotal;
-//             totalGST += gstAmount;
-//             totalQuantity += cartItem.quantity;
-
-//             if( stock.stock === cartItem.quantity ){ inventory.product_stock.splice(0, 1)} 
-//             else { stock.stock -= cartItem.quantity }
-
-//             inventory.product_total_stock -= cartItem.quantity;
-//             await inventory.save({ session });
-            
-//             product.current_stock = inventory.product_total_stock
-//             await product.save({ session });
-//         }
-
-//         const deliveryCharges = totalSellingPrice < FREE_DELIVERY_LIMIT ? DELIVERY_CHARGE : 0
-
-//         const totalAmount = totalSellingPrice + deliveryCharges
-
-//         const [order] = await Order.create([{
-//             order_id: `ORD${generateRandom12DigitNumber()}`,
-//             user_id: userId,
-//             total_mrp: totalMRP,
-//             total_price: totalSellingPrice,
-//             delivery_charges: deliveryCharges,
-//             total_amount: totalAmount,
-//             total_gst: totalGST,
-//             total_quantity: totalQuantity,
-//             delivery_address: {
-//                 name : address.name,
-//                 phone_number: address.phone_number,
-//                 alternate_phone_number: address.alternate_phone_number,
-//                 house_no: address.house_no,
-//                 area: address.area,
-//                 landmark: address.landmark,
-//                 city: address.city,
-//                 district: address.district,
-//                 state: address.state,
-//                 pincode: address.pincode,
-//                 address_type: address.address_type
-//             },
-//             items: orderItems,
-//             payment: { 
-//                 method: payment_method,
-//                 status: payment_method === "UPI" || payment_method === "Card" || payment_method === "Net Banking"  ? "Paid": "Pending",
-//             }
-//         }], { session });
-
-//         cart.products = [];
-//         await cart.save({session})
-
-//         // Saving Transaction of the order
-//         if(payment_method != "COD"){
-//             const transactionData = {
-//                 type: "income",
-//                 category: "Sales",
-//                 title: `Order payment received`,
-//                 amount: order.total_amount,
-//                 payment_method: order.payment.method,
-//                 notes: `Payment received for order '${order.order_id}'`,
-//                 reference_no: order.order_id,
-//                 order_id: order._id,
-//                 transaction_date: new Date()
-//             }
-//             const transaction = new Transaction(transactionData);
-//             await transaction.save({ session });
-//         }
-
-//         await session.commitTransaction();
-//         return apiSucessResponce(res, "Order Placed Successfully", { order_id: order.order_id, total_amount: order.total_amount, payment_status: order.payment.status }, 201 )
-       
-//     } catch (error){
-//         await session.abortTransaction();
-//         console.log("error in createOrder controller : " ,error)
-//         return apiErrorResponce(res , "internal server error" , error.message || "Unable to place order." , 500)
-//     } finally {
-//         await session.endSession();
-//     }
-// }
 
 export const fetchCustomerOrder = async (req, res) => {
     try {
