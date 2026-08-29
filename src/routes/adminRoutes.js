@@ -17,6 +17,7 @@ import { uploadBrandImage, uploadCategoryImage, uploadGroupImage, uploadProductI
 import { adminDashboardData } from "../controllers/adminControllers/adminDashboardController.js";
 import { adminFetchActivityPage, adminFetchPreviewActivity } from "../controllers/adminControllers/adminActivityController.js";
 import { adminCreateTransaction, adminFetchTransactionsPage } from "../controllers/adminControllers/adminTransactionsController.js";
+import { adminCreateBusinessUnit, fetchAllBusinessUnit } from "../controllers/adminControllers/adminBusinessUnitController.js";
 
 const router = express.Router()
 
@@ -108,6 +109,9 @@ router.get('/transaction/transaction_page' , verifyUser, adminFetchTransactionsP
 router.post('/transaction/create' , verifyUser, adminCreateTransaction )
 
 
+// Business unit
+router.post('/business-unit/create' , verifyUser, adminCreateBusinessUnit )
+router.get('/business-unit/all' , verifyUser, fetchAllBusinessUnit )                        // testing controllers
 
 
 

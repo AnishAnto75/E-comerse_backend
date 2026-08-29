@@ -26,9 +26,8 @@ const productSchema = mongoose.Schema({
     ],
     product_description : { type : String, default: null },
     product_highlights:{ type:[String], default:[] },
-    product_added_by : { type : mongoose.SchemaTypes.ObjectId, ref: "Staff", required: true },
-    product_variant_group_id : { type : mongoose.SchemaTypes.ObjectId, ref: "ProductVariantGroup", default: null },
-    product_review_id: { type : mongoose.SchemaTypes.ObjectId, ref : "ProductReview" },
+    // product_variant_group_id : { type : mongoose.SchemaTypes.ObjectId, ref: "ProductVariantGroup" },
+    // product_review_id: { type : mongoose.SchemaTypes.ObjectId, ref : "ProductReview" },
     faqs: {
         type: [{
             question: { type: String, required: true},
@@ -53,6 +52,7 @@ const productSchema = mongoose.Schema({
     search_keywords: { type: [String], default: []},
     status: { type: String, enum : ['active', 'inactive', 'out_of_stock'], default: "active" },
     deleted : {type: Boolean, default: false},
+    product_added_by : { type : mongoose.SchemaTypes.ObjectId, ref: "Staff", required: true },
     history: {
         type: [{
             action: { type: String, enum: [ "update", "delete" ], required: true },

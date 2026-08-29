@@ -1,9 +1,8 @@
 import mongoose from "mongoose"
 
 const productTransactionSchema = new mongoose.Schema({
-
     product_id: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true, index: true },
-    purchase_id: { type: mongoose.Schema.Types.ObjectId, ref : "Purchase", required: true },
+    purchase_id: { type: mongoose.Schema.Types.ObjectId, ref : "Purchase" },
     batch_no: { type: String, default: "" },
     transaction_type: { type: String,
         enum: [ 

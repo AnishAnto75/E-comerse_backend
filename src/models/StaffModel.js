@@ -1,7 +1,8 @@
-import mongoose from "mongoose";
+import mongoose from "mongoose"
 
 const staffSchema = mongoose.Schema({
     staff_id: {type: String, required: true, unique: true, immutable: true, index: true},
+    business_unit_id: { type: mongoose.SchemaTypes.ObjectId, ref: "BusinessUnit", required: true },
     name: {type: String, required: true, trim: true},
     email: { type: String, unique: true, lowercase: true, trim: true, sparse: true, default: undefined },
     gender: {type: String, enum: ["male", "female", "others"], required: true},
@@ -43,6 +44,7 @@ const staffSchema = mongoose.Schema({
         state: { type: String, required: true, trim: true },
         pincode: { type: String, required: true, trim: true }
     } ,
+
     joining_date: {type: Date, required: true},
 
     password_created: { type: Boolean, default: false },
