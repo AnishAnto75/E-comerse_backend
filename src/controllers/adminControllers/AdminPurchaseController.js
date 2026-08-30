@@ -111,10 +111,8 @@ export const adminSearchSuppliersForCreatePurchase = async (req, res) => {
     try {
         const { query } = req.query;
         
-        const escapedQuery = query?.replace( /[.*+?^${}()|[\]\\]/g, "\\$&");
-
+        const escapedQuery = query?.replace( /[.*+?^${}()|[\]\\]/g, "\\$&")
         if (!escapedQuery?.trim()) { return apiSucessResponce(res, "Supplier fetched successfully", [] , 200)}
-
 
         // Search by name or Supplier
         const products = await Supplier.find({ 
@@ -126,14 +124,13 @@ export const adminSearchSuppliersForCreatePurchase = async (req, res) => {
                 { supplier_phone: { $regex: escapedQuery, $options: "i"}},
             ]
         })
-        .select( "_id supplier_id supplier_name supplier_email supplier_phone supplier_gst_no supplier_address")
-        .sort({ createdAt: -1 })
+        .select( "_id supplier_name supplier_gst_no")
         .limit(10)
-        .lean();
+        .lean()
 
         return apiSucessResponce(res, "Supplier fetched successfully", products, 200)
     } catch (error) {
-        console.error(error);
+        console.error(error)
         return apiErrorResponce(res, "failed to search Supplier")
     }
 }
@@ -178,6 +175,7 @@ export const adminCreatePurchase = async (req, res) => {
     const MAX_BEST_BEFORE = 10000
     const MAX_PRODUCTS_PER_PURCHASE = 500
 
+    // Helpers
     const roundMoney = (value) => Math.round((value + Number.EPSILON) * 100) / 100
     const isPlainObject = (value) => value !== null && typeof value === "object" && !Array.isArray(value)
     const isValidObjectId = (value) => { 
@@ -240,7 +238,6 @@ export const adminCreatePurchase = async (req, res) => {
         if (number < min || number > max) { throw new Error( `${fieldName} must be between ${min} and ${max}.` )}
         return roundMoney(number)
     }
-
     const parseDate = ( value, fieldName, required = true ) => {
         if ( value === undefined || value === null || value === "" ) {
             if (!required) return null
@@ -253,25 +250,13 @@ export const adminCreatePurchase = async (req, res) => {
     }
 
     const session = await mongoose.startSession()
-
     try {
 
         const staffId = req.user?._id
 
         if (!isPlainObject(req.body)) { return apiErrorResponce( res, "Invalid request body.", null, 400 ) }
 
-        const allowedFields = new Set([ 
-            "supplier_id",
-            "supplier_invoice_no",
-            "invoice_date",
-            "delivery_date",
-            "products",
-            "payment_method",
-            "discount_received",
-            "paid_amount",
-            "payment_date"
-        ])
-
+        const allowedFields = new Set([ "supplier_id", "supplier_invoice_no", "invoice_date", "delivery_date", "products", "payment_method", "discount_received", "paid_amount", "payment_date" ])
         for (const key of Object.keys(req.body)) {
             if (!allowedFields.has(key)) { return apiErrorResponce( res, `Unexpected field '${key}'.`, null, 400)}
         }
@@ -280,15 +265,16 @@ export const adminCreatePurchase = async (req, res) => {
 
         const supplierId = parseRequiredObjectId( supplier_id, "Supplier ID" )
         const supplierInvoiceNo = cleanString( supplier_invoice_no, "Supplier invoice number", MAX_REFERENCE_LENGTH )
+        const invoiceDate = parseDate( invoice_date, "Invoice date" )
+        const deliveryDate = parseDate( delivery_date, "Delivery date" )
+        const paidAmount = parseMoney( paid_amount, "Paid amount" )
+        const discountReceived = parseMoney( discount_received, "Discount" )
 
         if (!Array.isArray(products)) { return apiErrorResponce( res, "Products must be an array.", null, 400 )}
         if (products.length === 0) { return apiErrorResponce( res, "At least one product is required.", null, 400 )}
         if (products.length > MAX_PRODUCTS_PER_PURCHASE) { return apiErrorResponce( res, `A purchase cannot contain more than ${MAX_PRODUCTS_PER_PURCHASE} products.`, null, 400 )}
-        const invoiceDate = parseDate( invoice_date, "Invoice date" )
-        const deliveryDate = parseDate( delivery_date, "Delivery date" )
         if (deliveryDate < invoiceDate) { return apiErrorResponce( res, "Delivery date cannot be before invoice date.", null, 400 ) }
 
-        const paidAmount = parseMoney( paid_amount, "Paid amount" )
         let paymentMethod = null
         if (paidAmount > 0) {
             if ( typeof payment_method !== "string" || !PAYMENT_METHODS.has(payment_method) ) { throw new Error( "Valid payment method is required when payment is made." )}
@@ -304,22 +290,7 @@ export const adminCreatePurchase = async (req, res) => {
         const normalizedProducts = []
         const productIds = []
 
-        const allowedProductFields = new Set([
-            "product_id",
-            "batch_no",
-            "free_received",
-            "quantity_received",
-            "size",
-            "manufacture_date",
-            "expiry_date",
-            "best_before",
-            "mrp",
-            "purchase_cost",
-            "gst_percentage",
-            "other_expenses",
-            "selling_price"
-        ])
-
+        const allowedProductFields = new Set([ "product_id", "batch_no", "free_received", "quantity_received", "size", "manufacture_date", "expiry_date", "best_before", "mrp", "purchase_cost", "gst_percentage", "other_expenses", "selling_price" ])
 
         for ( let index = 0; index < products.length; index++ ) {
             const item = products[index]
@@ -376,8 +347,6 @@ export const adminCreatePurchase = async (req, res) => {
 
         const uniqueProductIds = new Set(productIds.map(id => id.toString()) )
         if ( uniqueProductIds.size !== productIds.length ) { return apiErrorResponce( res, "The same product cannot appear more than once in a purchase.", null, 409 )}
-
-        const discountReceived = parseMoney( discount_received, "Discount" )
 
         await session.startTransaction()
 
@@ -440,10 +409,10 @@ export const adminCreatePurchase = async (req, res) => {
         gstAmount = roundMoney(gstAmount)
         totalOtherExpenses = roundMoney(totalOtherExpenses)
 
-        const subTotalAmount = roundMoney( baseAmount + gstAmount )
+        const subTotalAmount = roundMoney( baseAmount + gstAmount + totalOtherExpenses)
         if ( discountReceived > subTotalAmount ) { throw new Error( "Discount cannot exceed subtotal amount." )}
 
-        const grandTotal = roundMoney( subTotalAmount - discountReceived +  totalOtherExpenses )
+        const grandTotal = roundMoney( subTotalAmount - discountReceived )
 
         if (grandTotal < 0) { throw new Error( "Calculated grand total cannot be negative." )}
         if (paidAmount > grandTotal) { throw new Error( "Paid amount cannot exceed grand total." )}
@@ -451,10 +420,10 @@ export const adminCreatePurchase = async (req, res) => {
         const balanceAmount = roundMoney( grandTotal - paidAmount )
 
         let paymentStatus = "Pending"
-
         if (paidAmount === 0) { paymentStatus = "Pending" }
         else if (balanceAmount === 0) { paymentStatus = "Paid" }
         else { paymentStatus = "Partial" }
+
         if (paidAmount > 0 && !paymentDate) { paymentDate = new Date() }
         if (paidAmount === 0 && paymentDate) { throw new Error( "Payment date cannot be provided when paid amount is zero." )}
 
@@ -481,7 +450,6 @@ export const adminCreatePurchase = async (req, res) => {
             balance_amount: balanceAmount,
             added_by: staffId,
             deleted: false,
-            history: {}
         }], { session })
 
         for (const item of normalizedProducts) {
@@ -591,7 +559,7 @@ export const adminCreatePurchase = async (req, res) => {
                 reference_type: "Purchase",
                 reference_no: purchase.purchase_id,
                 created_by: staffId,
-                note: `Stock received from purchase ${purchase.purchase_id}.`
+                note: `Stock received from purchase '${purchase.purchase_id}'.`
             }], { session })
         }
 

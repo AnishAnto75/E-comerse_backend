@@ -22,8 +22,7 @@ const inventoryBatchSchema = new mongoose.Schema({
 
     // RECEIVING
     received_at: { type: Date, default: Date.now }
-}, { _id: true, timestamps: true }
-)
+}, { _id: true, timestamps: true })
 
 // WAREHOUSE INVENTORY
 const warehouseInventorySchema = new mongoose.Schema({
@@ -33,17 +32,14 @@ const warehouseInventorySchema = new mongoose.Schema({
     reserved_stock: { type: Number, default: 0, min: 0 },
 
     batches: { type: [inventoryBatchSchema], default: []}
-}, { _id: false }
-)
-
+}, { _id: false })
 
 // STORE INVENTORY
 const storeInventorySchema = new mongoose.Schema({
     business_unit_id: { type: mongoose.SchemaTypes.ObjectId,ref: "BusinessUnit", required: true },
     total_stock: { type: Number, default: 0, min: 0 },
     batches: { type: [inventoryBatchSchema], default: [] }
-},{ _id: false }
-)
+},{ _id: false })
 
 
 // MAIN PRODUCT INVENTORY
@@ -58,8 +54,7 @@ const productInventorySchema = new mongoose.Schema({
 
     status: { type: String, enum: { values: [ "active", "out_of_stock", "inactive" ], message: "Invalid inventory status." },default: "active", index: true },
     deleted: { type: Boolean, default: false, index: true }
-}, { timestamps: true, strict: true, strictQuery: true, versionKey: "_v", minimize: true }
-)
+}, { timestamps: true, strict: true, strictQuery: true, versionKey: "_v", minimize: true })
 
 productInventorySchema.index({ product_id: 1, deleted: 1 })
 productInventorySchema.index({ "stores.business_unit_id": 1 })

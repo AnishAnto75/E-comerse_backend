@@ -74,7 +74,7 @@ router.get('/purchase/create-purchase/fetch-supplier/' , verifyUser, adminSearch
 router.get('/purchase/create-purchase/search-products/' , verifyUser, adminSearchProductsForCreatePurchase)
 
 router.get('/purchase/all-purchase' , verifyUser, fetchAllAdminPurchases )                        // testing controllers
-router.get('/purchase/purchase_id/:id' , verifyUser, getpurchase )                        // testing controllers
+router.get('/purchase/purchase_id/:id' , verifyUser, getpurchase )                                // testing controllers
 
 // Orders
 router.get('/order/order_page' , verifyUser, adminFetchOrderPage )
@@ -85,7 +85,7 @@ router.patch("/order/update/out/:order_id" , verifyUser, adminOutOrder )
 router.patch("/order/update/deliver/:order_id" , verifyUser, adminDeliverOrder )
 router.patch("/order/update/cancel/:order_id" , verifyUser, adminCancelOrder )
 
-router.get('/order/all-order' , verifyUser, fetchAllAdminOrder )                        // testing controllers
+router.get('/order/all-order' , verifyUser, fetchAllAdminOrder )                                  // testing controllers
 
 
 // Staff
@@ -121,51 +121,54 @@ router.get('/business-unit/all' , verifyUser, fetchAllBusinessUnit )            
 
 
 
-// old
 
 
-// Customer
-router.get('/customer/allCustomer' , verifyUser, verifingAdmin,  adminFetchAllCustomer )
-router.get('/customer/customer-page' , verifyUser, verifingAdmin,  adminFetchForCustomerPage )
-router.get('/customer/customer-page/search/:user_id' , verifyUser, verifingAdmin, fetchCustomerByIdForCustomerPage )
-router.get('/customer/customer_id/:user_id' , verifyUser, verifingAdmin,  fetchAdminCustomer )
-router.get('/customer/block/customer_id/:user_id' , verifyUser, verifingAdmin,  adminBlockUser )
-router.get('/customer/unBlock/customer_id/:user_id' , verifyUser, verifingAdmin,  adminUnBlockUser )
+
+// // old
 
 
-// ProductCategory
-router.get('/product-category/all-categories' , verifyUser , verifingAdmin, fetchAllProductCategory)
-router.get('/product-category/group-id/:id' , verifyUser , verifingAdmin, fetchCategoriesByGroup)
+// // Customer
+// router.get('/customer/allCustomer' , verifyUser, verifingAdmin,  adminFetchAllCustomer )
+// router.get('/customer/customer-page' , verifyUser, verifingAdmin,  adminFetchForCustomerPage )
+// router.get('/customer/customer-page/search/:user_id' , verifyUser, verifingAdmin, fetchCustomerByIdForCustomerPage )
+// router.get('/customer/customer_id/:user_id' , verifyUser, verifingAdmin,  fetchAdminCustomer )
+// router.get('/customer/block/customer_id/:user_id' , verifyUser, verifingAdmin,  adminBlockUser )
+// router.get('/customer/unBlock/customer_id/:user_id' , verifyUser, verifingAdmin,  adminUnBlockUser )
 
 
-//ProductBrand
-router.get('/brand/brand-id/:id', verifyUser, verifingAdmin, fetchBrand )
-router.get('/brand/search' , verifyUser, verifingAdmin, adminSearchBrand)
-router.post('/brand/edit/:id' , verifyUser, verifingAdmin, adminEditBrand )
+// // ProductCategory
+// router.get('/product-category/all-categories' , verifyUser , verifingAdmin, fetchAllProductCategory)
+// router.get('/product-category/group-id/:id' , verifyUser , verifingAdmin, fetchCategoriesByGroup)
 
 
-// Products
-router.get('/product/search' , verifyUser, verifingAdmin, adminSearchProducts)
-router.get('/product/all-product' , verifyUser, verifingAdmin, adminFetchAllProduct)
-router.get('/product/product-page' , verifyUser, verifingAdmin, adminFetchForProductPage)
-router.get('/product/product_id/:id' , verifyUser, verifingAdmin, adminFetchProductView)
-router.get('/product/category/:id' , verifyUser, verifingAdmin, adminFetchProductByCategory)
+// //ProductBrand
+// router.get('/brand/brand-id/:id', verifyUser, verifingAdmin, fetchBrand )
+// router.get('/brand/search' , verifyUser, verifingAdmin, adminSearchBrand)
+// router.post('/brand/edit/:id' , verifyUser, verifingAdmin, adminEditBrand )
 
 
-//Supplier
-router.get('/supplier/all-supplier' , verifyUser, verifingAdmin, adminFetchAllSuppliers)
+// // Products
+// router.get('/product/search' , verifyUser, verifingAdmin, adminSearchProducts)
+// router.get('/product/all-product' , verifyUser, verifingAdmin, adminFetchAllProduct)
+// router.get('/product/product-page' , verifyUser, verifingAdmin, adminFetchForProductPage)
+// router.get('/product/product_id/:id' , verifyUser, verifingAdmin, adminFetchProductView)
+// router.get('/product/category/:id' , verifyUser, verifingAdmin, adminFetchProductByCategory)
 
 
-//Purchase
-router.get('/purchase/all-suppliers' , verifyUser, verifingAdmin, adminFetchAllSuppliersForPurchaseBook)
-router.get('/purchase/product/barcode/:id' , verifyUser, verifingAdmin , adminFetchProductsByBarcodeForPurchaseEntry)
-router.get('/purchase/product/name/:name' , verifyUser, verifingAdmin, adminFetchProductsByNameForPurchaseEntry)
-router.get('/purchase/all-purchases' , verifyUser, verifingAdmin, adminFetchAllPurchases)
-router.get('/purchase/purchase-id/:id' , verifyUser, verifingAdmin, adminFetchPurchaseBook)
+// //Supplier
+// router.get('/supplier/all-supplier' , verifyUser, verifingAdmin, adminFetchAllSuppliers)
 
-// Staff
-router.get('/staff/all-staff' , verifyUser, verifingAdmin, adminFetchAllStaffs )
-router.get('/staff/:id' , verifyUser, verifingAdmin, adminFetchStaff )
+
+// //Purchase
+// router.get('/purchase/all-suppliers' , verifyUser, verifingAdmin, adminFetchAllSuppliersForPurchaseBook)
+// router.get('/purchase/product/barcode/:id' , verifyUser, verifingAdmin , adminFetchProductsByBarcodeForPurchaseEntry)
+// router.get('/purchase/product/name/:name' , verifyUser, verifingAdmin, adminFetchProductsByNameForPurchaseEntry)
+// router.get('/purchase/all-purchases' , verifyUser, verifingAdmin, adminFetchAllPurchases)
+// router.get('/purchase/purchase-id/:id' , verifyUser, verifingAdmin, adminFetchPurchaseBook)
+
+// // Staff
+// router.get('/staff/all-staff' , verifyUser, verifingAdmin, adminFetchAllStaffs )
+// router.get('/staff/:id' , verifyUser, verifingAdmin, adminFetchStaff )
 
 
 

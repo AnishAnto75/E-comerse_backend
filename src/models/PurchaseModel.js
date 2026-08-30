@@ -44,9 +44,17 @@ const purchaseSchema = mongoose.Schema({
     balance_amount: {type: Number, required:true},
     
     added_by : { type : mongoose.SchemaTypes.ObjectId, ref : "Staff", required : true },
-    deleted:{ type: Boolean, default:false},
-    history: { type: mongoose.Schema.Types.Mixed, default: {}}
-    
+    deleted:{ type: Boolean, default: false},
+    history: {
+        type: [{
+            action: { type: String, enum: [ "update", "delete" ], required: true },
+            updated_by: { type: mongoose.SchemaTypes.ObjectId, ref: "Staff" },
+            updated_at: { type: Date, default: Date.now },
+            changes: { type: mongoose.Schema.Types.Mixed, default: {} }
+        }],
+        default: []
+    }
+
 },{timestamps: true})
 
 purchaseSchema.index( { purchase_id: 1 }, { unique: true })
